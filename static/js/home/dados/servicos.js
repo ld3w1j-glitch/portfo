@@ -39,7 +39,7 @@ export const DNA = [
   [{glifo: 'Aa', fonte: 'Barlow Condensed', t: 'Barlow Condensed', d: 'Black, caixa-alta: títulos e impacto'},
    {glifo: 'Aa', fonte: 'Inter',            t: 'Inter',            d: 'Textos corridos e informações'},
    {glifo: '01', fonte: 'JetBrains Mono',   t: 'JetBrains Mono',   d: 'Rótulos, números e dados'}],
-  [{ic: 'camadas',  t: '165 elementos',      d: 'Molduras, ícones, padrões e fundos em SVG'},
+  [{ic: 'camadas',  t: '267 elementos',      d: 'Molduras, ícones, padrões e fundos em SVG'},
    {ic: 'cubo',     t: 'Cantos chanfrados',  d: 'A forma que assina todas as peças'},
    {ic: 'internet', t: 'Padrões e texturas', d: 'Listras, pontos, ondas e hachuras'},
    {ic: 'salvar',   t: 'Quatro cores',       d: 'Cada elemento em grafite, off-white, laranja e azul'}],

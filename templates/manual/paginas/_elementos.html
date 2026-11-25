@@ -2,14 +2,14 @@
 <section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
   {{ mac.cab(secao, id) }}
   <div class="sec-titulo"><h2 class="t-md">Biblioteca <span class="laranja-t">de elementos</span></h2></div>
-  <p class="mudo" style="max-width:90ch;margin-bottom:12px">{{ m.ELEMENTOS|sum(attribute='n') }} elementos em SVG, organizados em sete categorias. Antes de desenhar algo novo, procure aqui. Tudo existe em quatro cores e está em <code>static/img/elementos/</code>.</p>
-  <div class="catalogo cut-14" style="flex:1;min-height:0;grid-template-rows:repeat(2,1fr);background:none;clip-path:none">
+  <p class="mudo" style="max-width:90ch;margin-bottom:12px">{{ m.ELEMENTOS|sum(attribute='n') }} elementos em SVG, organizados em {{ m.ELEMENTOS|length }} categorias. Antes de desenhar algo novo, procure aqui. Tudo existe em quatro cores e está em <code>static/img/elementos/</code>.</p>
+  <div class="catalogo" style="flex:1;min-height:0;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);background:none;clip-path:none">
     {% for c in m.ELEMENTOS %}
     <div class="cat-card cut-14">
       <span class="n">{{ c.n }} elementos</span>
       <h4>{{ c.nome }}</h4>
       <div class="amostras-el">
-        {% for nome in c.amostra[:5] %}
+        {% for nome in c.amostra[:4] %}
           {% set sufixo = 'offwhite' %}
           {{ mac.el(c.id, nome, sufixo) }}
         {% endfor %}

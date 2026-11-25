@@ -118,21 +118,24 @@ LOGO_ERROS = [
 
 # ------------------------------------------------------------------ elementos (contagem real em static/img/elementos)
 ELEMENTOS = [
-    {"id": "elementos-graficos", "nome": "Elementos gráficos", "n": 30, "amostra": ["canto-l", "cruz", "slash-triplo", "seta-bloco", "mira", "chevrons-3"],
-     "uso": "Cantos, setas, divisores e marcas de precisão que organizam a peça."},
-    {"id": "molduras", "nome": "Molduras", "n": 21, "amostra": ["moldura-cheia", "moldura-cantos", "moldura-janela", "moldura-etiqueta"],
-     "uso": "Contêineres chanfrados para foto, texto, botão e cartão."},
-    {"id": "padroes", "nome": "Padrões", "n": 21, "amostra": ["listras-grossas", "pontos", "grade", "ondas-topograficas", "hachura-cruzada", "meio-tom"],
-     "uso": "Texturas geométricas para fundos e áreas de preenchimento."},
-    {"id": "fundos", "nome": "Fundos", "n": 8, "amostra": ["fundo-hud", "fundo-ondas", "fundo-alvo", "fundo-slashes"],
-     "uso": "Composições prontas de fundo para posts e capas."},
-    {"id": "icones", "nome": "Ícones", "n": 51, "amostra": ["pincel", "codigo", "camera", "camadas", "foguete", "check"],
-     "uso": "Ícones de linha para serviços, listas e interface."},
-    {"id": "simbolos", "nome": "Símbolos", "n": 19, "amostra": ["chanfro-cheio", "hexagono", "octogono-linha", "estrela-8"],
-     "uso": "Formas de apoio: chanfros, polígonos e brilhos."},
-    {"id": "extras", "nome": "Extras", "n": 15, "amostra": ["seta-diagonal", "botao-play", "selo-verificado", "qr-code"],
-     "uso": "Peças utilitárias: play, QR, selo de verificado, wifi."},
+    {"id": "elementos-graficos", "nome": "Elementos gráficos", "n": 42, "amostra": ["canto-l", "cruz", "slash-triplo", "seta-bloco", "burst-estrela", "linha-cotada"],
+     "uso": "Cantos, setas, selos e marcas de precisão."},
+    {"id": "molduras", "nome": "Molduras", "n": 27, "amostra": ["moldura-cheia", "moldura-cantos", "moldura-janela", "moldura-polaroid"],
+     "uso": "Contêineres chanfrados para foto, texto e botão."},
+    {"id": "padroes", "nome": "Padrões e texturas", "n": 35, "amostra": ["listras-grossas", "hexagonos", "circuito-trilhas", "blueprint", "halftone-diagonal", "chanfros-concentricos"],
+     "uso": "Texturas geométricas para fundos e preenchimentos."},
+    {"id": "fundos", "nome": "Fundos", "n": 15, "amostra": ["fundo-hud", "fundo-circuito", "fundo-blueprint", "fundo-chanfros"],
+     "uso": "Composições prontas para posts e capas."},
+    {"id": "icones", "nome": "Ícones", "n": 77, "amostra": ["pincel", "codigo", "camera", "grafico-barras", "trofeu", "megafone"],
+     "uso": "Ícones de linha para serviços e interface."},
+    {"id": "simbolos", "nome": "Símbolos", "n": 26, "amostra": ["chanfro-cheio", "hexagono", "seta-chanfrada", "raio"],
+     "uso": "Chanfros, polígonos e brilhos de apoio."},
+    {"id": "extras", "nome": "Extras", "n": 22, "amostra": ["seta-diagonal", "botao-play", "tag-rec", "controle-player"],
+     "uso": "Play, QR, selos, áudio e interface."},
+    {"id": "video", "nome": "Moldes para vídeo", "n": 23, "amostra": ["lower-third-barra", "legenda-placa", "video-moldura-16x9", "chamada-seguir"],
+     "uso": "Lower thirds, legendas, molduras, transições e telas finais."},
 ]
+TOTAL_ELEMENTOS = sum(c["n"] for c in ELEMENTOS)
 CORES_ELEMENTO = ["grafite", "offwhite", "laranja", "azul"]
 
 # ------------------------------------------------------------------ movimento
@@ -155,15 +158,22 @@ MOVIMENTO = [
 # ------------------------------------------------------------------ aplicações (espelha o gerador de peças)
 FORMATOS = [
     ("Post 4:5", "1080 × 1350"), ("Quadrado", "1080 × 1080"), ("Story / Reels", "1080 × 1920"), ("Miniatura 16:9", "1280 × 720"),
-    ("Slide 16:9", "1920 × 1080"), ("Capa / banner", "1500 × 500"), ("Cartão de visita", "1050 × 600"), ("Assinatura de e-mail", "1200 × 400"),
+    ("Slide / vídeo Full HD", "1920 × 1080"), ("Capa / banner", "1500 × 500"), ("Cartão de visita", "1050 × 600"), ("Assinatura de e-mail", "1200 × 400"),
+    ("Capa YouTube", "2560 × 1440"), ("Capa LinkedIn", "1584 × 396"), ("Compartilhamento (OG)", "1200 × 630"),
+    ("Documento A4", "2480 × 3508"), ("Crachá 54 × 86 mm", "638 × 1016"),
 ]
 TEMAS = [
     ("Escuro", "#1A1A1A", "#F5F5EF", "#F16A32"), ("Claro", "#F5F5EF", "#1A1A1A", "#F16A32"), ("Laranja", "#F16A32", "#1A1A1A", "#F5F5EF"),
     ("Azul", "#365CE6", "#F5F5EF", "#1A1A1A"), ("Grafite + azul", "#1A1A1A", "#F5F5EF", "#6C8CFF"),
     ("Claro + azul", "#F5F5EF", "#1A1A1A", "#365CE6"), ("Cinza", "#D9D9D9", "#1A1A1A", "#F16A32"),
+    ("Superfície", "#262626", "#F5F5EF", "#F16A32"),
 ]
+
 LAYOUTS = ["Poster", "Tipográfico", "Citação", "Projeto", "Carrossel", "Serviços", "Antes e depois", "Destaque",
-           "Cartão", "Verso", "Processo", "Checklist", "Depoimento", "Evento", "Comparação"]
+           "Cartão", "Verso", "Processo", "Checklist", "Depoimento", "Evento", "Comparação",
+           "Lista numerada", "Pergunta e resposta", "Dica rápida", "Oferta", "Lançamento", "Agenda", "Perfil", "Certificado",
+           "Capa de e-book", "Crachá", "Vídeo · capa", "Vídeo · lower third", "Vídeo · legenda", "Vídeo · abertura",
+           "Vídeo · tela final", "Vídeo · etapa"]
 
 # ------------------------------------------------------------------ voz
 VOZ_PRINCIPIOS = [

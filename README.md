@@ -75,7 +75,7 @@ Abra http://localhost:3000. Para recarregar templates sozinho: `$env:FLASK_DEBUG
 | E-mail, @ e site de contato | `CONTATO` em `marca.py` (vale para site e manual) |
 
 Os arquivos de `paginas/` são **gerados**: edite `ferramentas/gerador_template.html` e rode
-`python ferramentas/montar_gerador.py` (ou `gerar_elementos.py` para a biblioteca e os 661 SVGs).
+`python ferramentas/montar_gerador.py` (ou `gerar_elementos.py` para a biblioteca e os 1.069 SVGs; a segunda leva de elementos está em `ferramentas/elementos_v2.py` e os layouts novos do gerador em `ferramentas/gerador_layouts_v2.js`).
 
 ## Manual da marca
 
@@ -97,6 +97,12 @@ cada quadro vira uma página.
 - Os textos de essência, valores e voz foram escritos a partir dos textos do próprio site: revise e ajuste em `marca.py`.
 - CMYK é conversão aproximada do RGB; valide a prova de cor com a gráfica. Não há códigos Pantone.
 
+## Biblioteca e gerador
+
+- **Biblioteca de elementos:** 267 elementos em 8 categorias (molduras, elementos gráficos, padrões e texturas, fundos, ícones, símbolos, extras e **moldes para vídeo**), cada um em 4 cores = 1.069 SVGs. Para criar novos, adicione em `ferramentas/elementos_v2.py` e rode `python ferramentas/gerar_elementos.py` (regera as pastas em `static/img/elementos/` e a página `paginas/biblioteca-elementos.html`).
+- **Moldes para vídeo** (`static/img/elementos/video/`): molduras 16:9, 9:16, 1:1 e 4:5, zonas seguras, lower thirds, títulos, legendas, barra de progresso, transições, chamada para seguir, tela final e capa de miniatura.
+- **Gerador de peças:** 31 layouts (16 novos: lista numerada, pergunta e resposta, dica, oferta, lançamento, agenda, perfil, certificado, e-book, crachá e seis de vídeo), 8 temas, 13 formatos, todas as texturas e a opção **Fundo transparente** (PNG com alfa, para lower thirds e legendas). Edite `ferramentas/gerador_template.html` e `ferramentas/gerador_layouts_v2.js` e rode `python ferramentas/montar_gerador.py`.
+- Depois de mudar elementos ou o gerador, rode `montar_kit.py` e `gerar_manual_pdf.py` para atualizar o kit e o PDF.
 ## Publicar no Railway
 
 1. Pelo GitHub: suba a pasta `projeto-wo` num repositório e use **New Project → Deploy from GitHub repo**.
