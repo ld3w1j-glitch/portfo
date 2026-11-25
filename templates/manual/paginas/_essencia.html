@@ -1,0 +1,23 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="corpo c-12" style="align-content:center;gap:56px">
+    <div>
+      <p class="leg" style="margin-bottom:18px">Quem somos</p>
+      <h1 class="t-xl">Design,<br><span class="laranja-t">código</span><br>e imagem</h1>
+      <div class="barra-laranja"></div>
+      <p class="lead">{{ m.PROMESSA }}</p>
+      <p class="leg" style="margin-top:20px">{{ m.DESCRITOR }}</p>
+    </div>
+    <div style="display:grid;gap:12px;align-content:center">
+      {% for nome, desc in m.FRENTES %}
+      <div class="cartao">
+        {{ mac.el('icones', ['pincel','codigo','camera'][loop.index0], 'offwhite', 'ic') }}
+        <span class="num">{{ '%02d'|format(loop.index) }} · Frente</span>
+        <h3 class="t-sm">{{ nome }}</h3>
+        <p>{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

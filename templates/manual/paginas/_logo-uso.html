@@ -1,0 +1,18 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Qual logo <span class="laranja-t">usar</span></h2></div>
+  <p class="mudo" style="max-width:80ch;margin-bottom:6px">Comece pelo logo horizontal. Quando faltar espaço, desça na lista: wordmark, monograma. Perfis e carimbos pedem avatar ou selo.</p>
+  <div class="corpo c2" style="gap:0 48px;align-content:start">
+    {% for l in m.LOGOS %}
+    <div class="logo-linha">
+      <div class="im">{{ mac.logo(l.id, 'offwhite') }}</div>
+      <div>
+        <h4>{{ l.nome }}</h4>
+        <p>{{ l.uso }} <b>{{ l.ideal }}</b></p>
+        <span class="m">Mínimo: {{ l.min }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>

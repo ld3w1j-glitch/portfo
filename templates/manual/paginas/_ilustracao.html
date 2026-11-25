@@ -1,0 +1,32 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="corpo c2" style="gap:44px;align-content:stretch">
+    <div class="tile cut" style="min-height:0;background:var(--wo-grafite-2);position:relative">
+      {{ mac.el('elementos-graficos', 'canto-l', 'laranja', '', 'position:absolute;left:14px;top:14px;width:46px') }}
+      {{ mac.el('elementos-graficos', 'canto-l', 'laranja', '', 'position:absolute;right:14px;top:14px;width:46px;transform:rotate(90deg)') }}
+      {{ mac.el('elementos-graficos', 'canto-l', 'laranja', '', 'position:absolute;right:14px;bottom:14px;width:46px;transform:rotate(180deg)') }}
+      {{ mac.el('elementos-graficos', 'canto-l', 'laranja', '', 'position:absolute;left:14px;bottom:14px;width:46px;transform:rotate(-90deg)') }}
+      {{ mac.logo('avatar-sem-fundo', 'offwhite', '', 'max-height:400px;max-width:80%') }}
+      <span class="leg" style="left:70px;bottom:20px">Avatar sem fundo · off-white</span>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:16px">
+      <div>
+        <h2 class="t-md">Avatar <span class="laranja-t">e ilustração</span></h2>
+        <div class="barra-laranja"></div>
+        <p class="lead" style="font-size:18px">O traço é próprio e é o que assina o trabalho: contorno firme, formas cheias, duas tintas.</p>
+      </div>
+      <ul class="lista-simples">
+        <li><b>Duas tintas:</b> uma cor de traço e uma de fundo. Sem degradê, sem sombra suave.</li>
+        <li><b>Com fundo ou sem fundo:</b> o avatar vem na moldura chanfrada (perfis) ou solto, para capas e pôsteres.</li>
+        <li><b>Cores:</b> as mesmas quatro do logo. Escolha pelo contraste com o fundo.</li>
+        <li><b>Novas ilustrações</b> seguem a mesma espessura de contorno e o mesmo corte chanfrado.</li>
+      </ul>
+      <div style="display:flex;gap:12px;align-items:center">
+        {% for cor, bg in [('grafite','#F5F5EF'), ('offwhite','#1A1A1A'), ('laranja','#1A1A1A'), ('azul','#F5F5EF')] %}
+        <div style="width:92px;height:92px;background:{{ bg }};display:grid;place-items:center;{% if bg == '#1A1A1A' %}box-shadow:inset 0 0 0 1px var(--wo-linha){% endif %}">{{ mac.logo('avatar', cor, '', 'width:64px;height:auto') }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>

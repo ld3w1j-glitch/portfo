@@ -1,0 +1,14 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Família <span class="laranja-t">de logos</span></h2></div>
+  <p class="mudo" style="max-width:80ch;margin-bottom:14px">Oito versões do mesmo desenho, cada uma com um papel. Todas existem em SVG (vetor) e PNG de 2400 px, em quatro cores.</p>
+  <div class="corpo c4" style="align-content:stretch;grid-template-rows:repeat(2,1fr);gap:12px">
+    {% for l in m.LOGOS %}
+    <div class="tile cut">
+      {{ mac.logo(l.id, 'offwhite') }}
+      <span class="leg">{{ l.nome }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>

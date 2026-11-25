@@ -1,0 +1,32 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Voz <span class="laranja-t">e tom</span></h2></div>
+  <div class="corpo" style="gap:14px;align-content:start">
+    <div class="c4 corpo" style="gap:12px;flex:none">
+      {% for nome, desc in m.VOZ_PRINCIPIOS %}
+      <div class="cartao" style="padding:16px 18px">
+        <span class="num" style="margin-bottom:6px">{{ '%02d'|format(loop.index) }}</span>
+        <h3 class="t-xs" style="margin-bottom:6px">{{ nome }}</h3>
+        <p>{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="c4 corpo" style="gap:12px;flex:none">
+      {% for rot, frase, por in m.VOZ_EXEMPLOS %}
+      {% set cor = '#3ecf8e' if rot == 'Escreva' else '#ff6b6b' %}
+      <div class="cartao" style="padding:14px 16px;border-top:4px solid {{ cor }}">
+        <span class="leg" style="color:{{ cor }};opacity:1">{{ '✓' if rot == 'Escreva' else '✕' }} {{ rot }}</span>
+        <p style="font-size:15.5px;margin:6px 0 4px;opacity:1"><b>“{{ frase }}”</b></p>
+        <p style="font-size:13px">{{ por }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="cartao" style="padding:14px 18px;flex:none">
+      <p class="leg" style="margin-bottom:8px">Grafia</p>
+      <ul class="lista-simples" style="grid-template-columns:1fr 1fr;gap:6px 36px">
+        {% for g in m.GRAFIA %}<li>{{ g }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>

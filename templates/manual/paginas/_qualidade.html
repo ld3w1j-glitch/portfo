@@ -1,0 +1,15 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Antes <span class="laranja-t">de publicar</span></h2></div>
+  <div class="corpo" style="gap:28px;align-content:start;margin-top:4px">
+    <ul class="check">
+      {% for item in m.CHECKLIST %}<li><i></i><span>{{ item }}</span></li>{% endfor %}
+    </ul>
+    <div class="c3 corpo" style="gap:12px;flex:none">
+      <div class="cartao"><span class="num">Contraste</span><h3 class="t-xs">AA no mínimo</h3><p>Texto normal pede 4,5:1. Consulte a tabela de contraste da paleta antes de combinar cores novas.</p></div>
+      <div class="cartao"><span class="num">Movimento</span><h3 class="t-xs">Dá para desligar</h3><p>Animações respeitam “reduzir movimento” do sistema e ficam paradas numa pose.</p></div>
+      <div class="cartao"><span class="num">Leitura</span><h3 class="t-xs">Texto alternativo</h3><p>Imagens que informam levam descrição; as decorativas ficam sem texto alternativo.</p></div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,26 @@
+{% import 'manual/_macros.html' as mac %}
+{# tipo → (fundo, cor do logo, estilo da imagem) #}
+{% set casos = {
+  'esticado':     ('#F5F5EF', 'grafite', 'transform:scaleX(1.7)'),
+  'escuro':       ('#1A1A1A', 'grafite', ''),
+  'azul-laranja': ('#F16A32', 'azul',    ''),
+  'sombra':       ('#F5F5EF', 'grafite', 'filter:drop-shadow(6px 8px 5px rgba(0,0,0,.55))'),
+  'girado':       ('#F5F5EF', 'grafite', 'transform:rotate(-16deg)'),
+  'cor':          ('#1A1A1A', 'laranja', 'filter:hue-rotate(110deg) saturate(1.4)'),
+} %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Usos <span class="laranja-t">incorretos</span></h2></div>
+  <div class="corpo c3" style="gap:14px 22px;align-content:start;margin-top:4px">
+    {% for nome, porque, tipo in m.LOGO_ERROS %}
+    {% set c = casos[tipo] %}
+    <div>
+      <div class="erro-tile" style="background:{{ c[0] }};{% if c[0] == '#1A1A1A' %}box-shadow:inset 0 0 0 1px var(--wo-linha){% endif %}">
+        <div class="im">{{ mac.logo('wordmark', c[1], '', c[2]) }}</div>
+        <span class="x-marca">✕</span>
+      </div>
+      <div class="erro-leg"><h4>{{ nome }}</h4><p>{{ porque }}</p></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>

@@ -1,0 +1,23 @@
+{% import 'manual/_macros.html' as mac %}
+{% set molduras = ['moldura-cheia', 'moldura-cantos', 'moldura-janela', 'moldura-etiqueta', 'moldura-ticket', 'moldura-hud-duplo'] %}
+{% set padroes = ['listras-grossas', 'listras-finas', 'pontos', 'grade', 'ondas-topograficas', 'hachura-cruzada', 'meio-tom', 'xadrez'] %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Molduras <span class="laranja-t">e padrões</span></h2></div>
+  <div class="corpo c2" style="gap:36px;align-content:stretch">
+    <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+      <p class="leg">Molduras · contêineres chanfrados</p>
+      <p class="mudo" style="font-size:14px">Para fotos, textos, botões e cartões. O contorno e o corte já seguem a regra do chanfro.</p>
+      <div class="mosaico" style="grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);flex:1;min-height:0">
+        {% for n in molduras %}<div class="m cut-8">{{ mac.el('molduras', n, 'offwhite') }}<span>{{ n|replace('moldura-','') }}</span></div>{% endfor %}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+      <p class="leg">Padrões · texturas geométricas</p>
+      <p class="mudo" style="font-size:14px">Preenchem áreas vazias com ritmo. Use um padrão por peça e em baixa opacidade quando houver texto por cima.</p>
+      <div class="mosaico" style="grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);flex:1;min-height:0">
+        {% for n in padroes %}<div class="m cut-8" style="padding:0;overflow:hidden">{{ mac.el('padroes', n, 'offwhite', '', 'width:100%;height:100%;object-fit:cover') }}<span style="background:var(--wo-grafite);padding:1px 4px">{{ n }}</span></div>{% endfor %}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,38 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Aplicação <span class="laranja-t">digital</span></h2></div>
+  <div class="corpo c3" style="gap:20px;align-content:start;margin-top:4px">
+    <div>
+      {{ mac.foto('site-home.png', 'print-shot') }}
+      <p class="mock-cap">Site · página inicial</p>
+      <p class="mudo" style="font-size:13px;margin-top:6px">Grafite, off-white e laranja em doses certas. Títulos em Barlow, navegação em mono, vídeos como fundo.</p>
+    </div>
+    <div>
+      {{ mac.foto('site-simulador.png', 'print-shot') }}
+      <p class="mock-cap">Ferramenta · simulador</p>
+      <p class="mudo" style="font-size:13px;margin-top:6px">As ferramentas usam o mesmo sistema de tokens, cartões chanfrados e ilustrações animadas em SVG.</p>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start">
+      <div>
+        <p class="leg" style="margin-bottom:8px">Favicon e perfil</p>
+        <div style="display:flex;gap:14px;align-items:flex-end">
+          <div style="background:var(--wo-grafite-2);padding:12px;display:flex;gap:10px;align-items:flex-end">
+            {{ mac.logo('monograma-wo', 'offwhite', '', 'height:14px;width:auto') }}
+            {{ mac.logo('monograma-wo', 'offwhite', '', 'height:22px;width:auto') }}
+            {{ mac.logo('monograma-wo', 'offwhite', '', 'height:34px;width:auto') }}
+          </div>
+          <div style="width:84px;height:84px;border-radius:50%;background:var(--wo-grafite-2);display:grid;place-items:center;overflow:hidden">{{ mac.logo('selo-cheio', 'offwhite', '', 'width:72px;height:auto') }}</div>
+          <div style="width:84px;height:84px;background:var(--wo-grafite-2);display:grid;place-items:center">{{ mac.logo('avatar', 'offwhite', '', 'width:64px;height:auto') }}</div>
+        </div>
+      </div>
+      <div>
+        <p class="leg" style="margin-bottom:8px">Assinatura de e-mail</p>
+        <div style="background:var(--wo-offwhite);color:var(--wo-grafite);padding:14px 16px;display:flex;gap:14px;align-items:center">
+          {{ mac.logo('avatar', 'grafite', '', 'width:58px;height:auto') }}
+          <div style="border-left:3px solid var(--wo-laranja);padding-left:14px;font-size:12px;line-height:1.5"><b style="font-family:var(--f-display);font-size:20px;text-transform:uppercase;font-weight:900;display:block;line-height:1">Washington Oliveira</b>Design · Código · Imagem<br><span style="opacity:.7">{{ m.CONTATO.email }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

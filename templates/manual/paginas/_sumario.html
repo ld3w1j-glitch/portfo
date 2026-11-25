@@ -1,0 +1,15 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  <div class="cab"><span><i class="slashes"></i> Manual da marca</span><span>{{ m.TITULOS[id] }}</span></div>
+  <h1 class="t-lg">Sumá<span class="laranja-t">rio</span></h1>
+  <div class="barra-laranja"></div>
+  <nav class="sumario" style="margin-top:14px">
+    {% for s in m.sumario() %}
+    <a href="#p-{{ s.id }}">
+      <span class="n">{{ '%02d'|format(s.n) }}</span>
+      <span class="nome">{{ s.nome }}</span>
+      <span class="p">p. {{ '%02d'|format(s.pagina) }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+</section>

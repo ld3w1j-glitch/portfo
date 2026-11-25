@@ -1,0 +1,14 @@
+  <section class="bloco contato" id="contato">
+    <canvas id="terreno" class="terreno" aria-hidden="true"></canvas>
+    <canvas id="globo" class="globo" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div>
+        <div class="sec-head"><span class="rotulo">08 · Contato</span></div>
+        <h2 class="display h-xl">Vamos <span>conversar?</span></h2>
+      </div>
+      <div class="cta">
+        <a class="btn btn-primario cut-sm" href="mailto:{{ m.CONTATO.email }}">{{ m.CONTATO.email }} <img src="{{ url_for('static', filename='img/elementos/extras/seta-diagonal-grafite.svg') }}" alt=""></a>
+        {% if m.CONTATO.social and m.CONTATO.social_url %}<a class="btn cut-sm" href="{{ m.CONTATO.social_url }}" target="_blank" rel="noopener">{{ m.CONTATO.social }}</a>{% endif %}
+      </div>
+    </div>
+  </section>

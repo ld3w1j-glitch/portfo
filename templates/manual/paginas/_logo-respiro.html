@@ -1,0 +1,39 @@
+{% import 'manual/_macros.html' as mac %}
+{# x = altura da letra “O”. Monograma e wordmark: o O ocupa toda a altura. Logo horizontal: O = 90/213,4 da altura total. #}
+{% set h_mono = 96 %}
+{% set h_hor = 112 %}
+{% set x_hor = (h_hor * 90 / 213.37)|round|int %}
+<section class="pg claro" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Respiro e <span class="laranja-t">tamanho mínimo</span></h2></div>
+  <p class="mudo" style="max-width:86ch;margin-bottom:6px">Deixe ao redor do logo um espaço livre <b>x</b>, igual à altura da letra “O”. Nada entra nessa área: texto, bordas ou outros elementos.</p>
+  <div class="corpo" style="gap:18px;align-content:start">
+    <div class="c2 corpo" style="gap:24px;flex:none">
+      <div class="respiro" style="min-height:0;height:290px">
+        <div class="caixa" style="padding:{{ h_mono }}px">
+          {{ mac.logo('monograma-wo', 'grafite', '', 'height:' ~ h_mono ~ 'px;width:auto') }}
+          <span class="x topo" style="height:{{ h_mono }}px">x</span><span class="x base" style="height:{{ h_mono }}px">x</span>
+          <span class="x esq" style="width:{{ h_mono }}px">x</span><span class="x dir" style="width:{{ h_mono }}px">x</span>
+        </div>
+      </div>
+      <div class="respiro" style="min-height:0;height:290px">
+        <div class="caixa" style="padding:{{ x_hor }}px">
+          {{ mac.logo('logo-horizontal', 'grafite', '', 'height:' ~ h_hor ~ 'px;width:auto') }}
+          <span class="x topo" style="height:{{ x_hor }}px">x</span><span class="x base" style="height:{{ x_hor }}px">x</span>
+          <span class="x esq" style="width:{{ x_hor }}px">x</span><span class="x dir" style="width:{{ x_hor }}px">x</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="leg" style="margin-bottom:10px">Tamanhos mínimos (tela)</p>
+      <div class="min-linha">
+        <figure>{{ mac.logo('logo-horizontal', 'grafite', '', 'width:120px;height:auto') }}<figcaption>Horizontal · 120 px</figcaption></figure>
+        <figure>{{ mac.logo('wordmark', 'grafite', '', 'width:100px;height:auto') }}<figcaption>Wordmark · 100 px</figcaption></figure>
+        <figure>{{ mac.logo('wo-digital', 'grafite', '', 'width:80px;height:auto') }}<figcaption>WO Digital · 80 px</figcaption></figure>
+        <figure>{{ mac.logo('selo-cheio', 'grafite', '', 'width:64px;height:auto') }}<figcaption>Selo · 64 px</figcaption></figure>
+        <figure>{{ mac.logo('avatar', 'grafite', '', 'width:48px;height:auto') }}<figcaption>Avatar · 48 px</figcaption></figure>
+        <figure>{{ mac.logo('monograma-wo', 'grafite', '', 'height:24px;width:auto') }}<figcaption>Monograma · 24 px</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>

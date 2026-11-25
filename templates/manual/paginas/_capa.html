@@ -1,0 +1,17 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg capa sem-rodape" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.logo('monograma-wo', 'grafite', 'bg-wo') }}
+  <div class="faixa" aria-hidden="true"></div>
+  <div class="conteudo">
+    {{ mac.logo('logo-horizontal', 'offwhite', 'lg') }}
+    <div>
+      <p class="leg" style="margin-bottom:18px">Identidade visual · versão {{ m.VERSAO }} · {{ m.DATA_EDICAO }}</p>
+      <h1>Manual<br><span class="laranja-t">da marca</span></h1>
+    </div>
+    <div class="rodape-capa">
+      <span class="leg">Washington Oliveira</span>
+      <span class="leg">{{ m.ASSINATURA }}</span>
+      <span class="leg">{{ m.DESCRITOR }}</span>
+    </div>
+  </div>
+</section>

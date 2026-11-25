@@ -1,0 +1,17 @@
+{# Atalhos para os arquivos da marca #}
+{% macro logo(nome, cor, cls='', estilo='') -%}
+<img class="{{ cls }}" style="{{ estilo }}" src="{{ url_for('static', filename='img/logos/' ~ nome ~ '-' ~ cor ~ '.svg') }}" alt="">
+{%- endmacro %}
+
+{% macro el(cat, nome, cor, cls='', estilo='') -%}
+<img class="{{ cls }}" style="{{ estilo }}" src="{{ url_for('static', filename='img/elementos/' ~ cat ~ '/' ~ nome ~ '-' ~ cor ~ '.svg') }}" alt="">
+{%- endmacro %}
+
+{% macro foto(nome, cls='', estilo='') -%}
+<img class="{{ cls }}" style="{{ estilo }}" src="{{ url_for('static', filename='img/manual/' ~ nome) }}" alt="">
+{%- endmacro %}
+
+{# Cabeçalho do quadro: seção à esquerda, título da página à direita #}
+{% macro cab(secao, id) -%}
+<div class="cab"><span><i class="slashes"></i> {{ '%02d'|format(m.SECOES.index(secao) + 1) }} · {{ secao }}</span><span>{{ m.TITULOS[id] }}</span></div>
+{%- endmacro %}

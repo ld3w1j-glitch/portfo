@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block titulo %}Washington Oliveira{% endblock %}</title>
+<meta name="description" content="{% block descricao %}Design, código e imagem.{% endblock %}">
+<meta name="theme-color" content="#1A1A1A">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+
+<!-- Prévia ao compartilhar o link (endereço absoluto, montado a partir do domínio que está no ar) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="{% block og_titulo %}{{ self.titulo() }}{% endblock %}">
+<meta property="og:description" content="{% block og_descricao %}{{ self.descricao() }}{% endblock %}">
+<meta property="og:image" content="{{ url_for('static', filename='img/og.png', _external=True) }}">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ self.og_titulo() }}">
+<meta name="twitter:description" content="{{ self.og_descricao() }}">
+<meta name="twitter:image" content="{{ url_for('static', filename='img/og.png', _external=True) }}">
+{% block head_extra %}{% endblock %}
+
+<!-- CSS: base comum (tokens + componentes) e depois os arquivos da página -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base/tokens.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base/componentes.css') }}">
+{% for arquivo in css_pagina or [] %}
+<link rel="stylesheet" href="{{ url_for('static', filename=arquivo) }}">
+{% endfor %}
+</head>
+<body>
+{% block corpo %}{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

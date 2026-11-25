@@ -1,0 +1,27 @@
+{% import 'manual/_macros.html' as mac %}
+{% set pastas = {'Plus':'plus','Esfera':'esfera','Cabeça':'cabeca','DNA':'dna','HUD':'hud','Terreno':'terreno','Globo':'globo'} %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Movimento <span class="laranja-t">com propósito</span></h2></div>
+  <div class="corpo c-12" style="gap:40px;align-content:start;margin-top:2px">
+    <div>
+      <p class="leg" style="margin-bottom:4px">Sete animações-assinatura</p>
+      {% for nome, titulo, onde, tipo in m.VIDEOS %}
+      <div class="video-item">
+        <div class="quadro"><img src="{{ url_for('static', filename='video/' ~ pastas[nome] ~ '/f0030.webp') }}" alt="" loading="lazy"></div>
+        <div><h4>{{ nome }} <span style="font-family:var(--f-texto);font-weight:400;text-transform:none;font-size:13px;opacity:.7">· {{ titulo }}</span></h4><p>{{ onde }}</p></div>
+        <span class="tag-m {{ 'loop' if tipo == 'loop' else '' }}">{{ 'Loop' if tipo == 'loop' else 'Scroll' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="display:grid;gap:10px;align-content:start">
+      <p class="leg">Princípios</p>
+      {% for nome, desc in m.MOVIMENTO %}
+      <div class="cartao" style="padding:16px 18px">
+        <h3 class="t-xs" style="margin-bottom:6px">{{ nome }}</h3>
+        <p>{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block titulo %}Manual da marca · WO Washington Oliveira{% endblock %}
+{% block descricao %}Manual da identidade visual de Washington Oliveira: logos, cores, tipografia, elementos, movimento e aplicações.{% endblock %}
+{% set css_pagina = ['css/paginas/manual.css'] %}
+
+{% block corpo %}
+<header class="barra nao-imprimir">
+  <a class="marca" href="{{ url_for('home') }}" aria-label="Voltar ao portfólio">
+    <img src="{{ url_for('static', filename='img/logos/monograma-wo-offwhite.svg') }}" alt="WO">
+    <span>Manual da marca · v{{ m.VERSAO }}</span>
+  </a>
+  <select id="irPara" aria-label="Ir para a página">
+    {% for id, secao in m.PAGINAS %}
+    <option value="p-{{ id }}">{{ '%02d'|format(loop.index) }} · {{ m.TITULOS[id] }}</option>
+    {% endfor %}
+  </select>
+  <a class="btn cut-sm opc" href="{{ url_for('static', filename='kit/kit-da-marca.zip') }}" download>Kit da marca</a>
+  <a class="btn cut-sm opc" href="{{ url_for('static', filename='kit/manual-da-marca.pdf') }}" download>PDF</a>
+  <button class="btn btn-primario cut-sm" id="imprimir" type="button">Imprimir</button>
+</header>
+
+<main class="escala" id="escala">
+{% for id, secao in m.PAGINAS %}
+  {% include 'manual/paginas/_' ~ id ~ '.html' %}
+{% endfor %}
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/ferramentas/manual.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Peças <span class="laranja-t">gráficas</span></h2></div>
+  <p class="mudo" style="max-width:92ch;margin-bottom:12px">Posts, stories, cartão e mais, sempre com a mesma lógica: fundo de uma cor, título em Barlow Black, um acento laranja e o avatar como assinatura. O <b>gerador de peças</b> monta tudo isso: {{ m.LAYOUTS|length }} layouts, {{ m.TEMAS|length }} temas e {{ m.FORMATOS|length }} formatos.</p>
+  <div class="corpo" style="gap:18px;align-content:start">
+    <div style="display:flex;gap:22px;align-items:flex-end">
+      <div>
+        <div class="mock sombra-m" style="width:208px;height:260px;background:var(--wo-grafite)">
+          {{ mac.logo('wordmark', 'offwhite', 'logo-p', 'height:20px') }}
+          {{ mac.logo('avatar-sem-fundo', 'offwhite', '', 'position:absolute;right:-6px;top:34px;height:112px;width:auto') }}
+          <div><h4 style="font-size:40px">Design<br><span class="laranja-t">código</span><br>imagem</h4><div class="barra-l"></div><span class="sub-m">Marcas e sites</span></div>
+        </div>
+        <div class="mock-cap">Post 4:5</div>
+      </div>
+      <div>
+        <div class="mock sombra-m" style="width:146px;height:260px;background:var(--wo-laranja);color:var(--wo-grafite)">
+          {{ mac.logo('monograma-wo', 'grafite', 'logo-p', 'height:22px') }}
+          <div><h4 style="font-size:36px">Role<br>para<br>ver ↓</h4><span class="sub-m">Story · Reels</span></div>
+        </div>
+        <div class="mock-cap">Story 9:16</div>
+      </div>
+      <div>
+        <div class="mock sombra-m" style="width:300px;height:171px;background:var(--wo-grafite)">
+          <div style="position:absolute;right:0;top:0;bottom:0;width:46px;background:var(--wo-laranja);transform:skewX(-14deg) translateX(18px)"></div>
+          {{ mac.logo('monograma-wo', 'offwhite', '', 'height:54px;width:auto;margin:auto 0') }}
+          <span class="sub-m">Washington Oliveira · Design · Código · Imagem</span>
+        </div>
+        <div class="mock-cap">Cartão · frente</div>
+      </div>
+      <div>
+        <div class="mock sombra-m" style="width:300px;height:171px;background:var(--wo-offwhite);color:var(--wo-grafite)">
+          {{ mac.logo('logo-horizontal', 'grafite', '', 'height:50px;width:auto;align-self:flex-start') }}
+          <div style="font-size:12px;line-height:1.5"><b>Washington Oliveira</b><br>{{ m.CONTATO.email }}{% if m.CONTATO.site %}<br>{{ m.CONTATO.site }}{% endif %}</div>
+        </div>
+        <div class="mock-cap">Cartão · verso</div>
+      </div>
+    </div>
+    <div>
+      <p class="leg" style="margin-bottom:8px">Temas do gerador</p>
+      <div class="temas">
+        {% for nome, bg, fg, ac in m.TEMAS %}
+        <div class="tema" style="background:{{ bg }};color:{{ fg }};{% if bg == '#1A1A1A' %}box-shadow:inset 0 0 0 1px var(--wo-linha){% endif %}"><span>{{ nome }}</span><i style="background:{{ ac }}"></i></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>

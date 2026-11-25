@@ -1,0 +1,25 @@
+{% import 'manual/_macros.html' as mac %}
+{# fundo, cor do logo, legenda, texto da legenda #}
+{% set combos = [
+  ('#1A1A1A', 'offwhite', 'Grafite', 'Off-white sobre grafite', 'grafite'),
+  ('#F5F5EF', 'grafite',  'Off-white', 'Grafite sobre off-white', 'claro'),
+  ('#F16A32', 'grafite',  'Laranja', 'Grafite sobre laranja', 'laranja'),
+  ('#365CE6', 'offwhite', 'Azul', 'Off-white sobre azul', 'azul'),
+  ('#1A1A1A', 'laranja',  'Grafite', 'Laranja sobre grafite (acento)', 'grafite'),
+  ('#F5F5EF', 'azul',     'Off-white', 'Azul sobre off-white (web e código)', 'claro'),
+  ('#D9D9D9', 'grafite',  'Cinza', 'Grafite sobre cinza', 'claro'),
+  ('#262626', 'offwhite', 'Grafite 2', 'Off-white sobre superfície', 'grafite'),
+] %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Logo <span class="laranja-t">sobre fundos</span></h2></div>
+  <p class="mudo" style="max-width:80ch;margin-bottom:14px">Escolha a cor do logo pelo contraste com o fundo. Estas oito combinações cobrem os usos da marca.</p>
+  <div class="corpo c4" style="align-content:stretch;grid-template-rows:repeat(2,1fr);gap:12px">
+    {% for bg, cor, rotulo, texto, cls in combos %}
+    <div class="tile cut" style="background:{{ bg }};{% if bg == '#1A1A1A' %}box-shadow:inset 0 0 0 1px var(--wo-linha){% endif %}">
+      {{ mac.logo('wordmark', cor) }}
+      <span class="leg" style="color:{{ '#1A1A1A' if cls in ('claro','laranja') else '#F5F5EF' }}">{{ texto }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>

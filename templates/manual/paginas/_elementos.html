@@ -1,0 +1,29 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Biblioteca <span class="laranja-t">de elementos</span></h2></div>
+  <p class="mudo" style="max-width:90ch;margin-bottom:12px">{{ m.ELEMENTOS|sum(attribute='n') }} elementos em SVG, organizados em sete categorias. Antes de desenhar algo novo, procure aqui. Tudo existe em quatro cores e está em <code>static/img/elementos/</code>.</p>
+  <div class="catalogo cut-14" style="flex:1;min-height:0;grid-template-rows:repeat(2,1fr);background:none;clip-path:none">
+    {% for c in m.ELEMENTOS %}
+    <div class="cat-card cut-14">
+      <span class="n">{{ c.n }} elementos</span>
+      <h4>{{ c.nome }}</h4>
+      <div class="amostras-el">
+        {% for nome in c.amostra[:5] %}
+          {% set sufixo = 'offwhite' %}
+          {{ mac.el(c.id, nome, sufixo) }}
+        {% endfor %}
+      </div>
+      <p>{{ c.uso }}</p>
+    </div>
+    {% endfor %}
+    <div class="cat-card cut-14" style="justify-content:space-between">
+      <span class="n">4 cores</span>
+      <h4>Cada elemento em quatro cores</h4>
+      <div class="cores-el" style="gap:10px">
+        {% for c in m.CORES_ELEMENTO %}<i style="width:44px;height:44px;background:{{ {'grafite':'#1A1A1A','offwhite':'#F5F5EF','laranja':'#F16A32','azul':'#365CE6'}[c] }}"></i>{% endfor %}
+      </div>
+      <p>Escolha a cor pelo fundo, como nos logos.</p>
+    </div>
+  </div>
+</section>

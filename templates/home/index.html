@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block titulo %}Washington Oliveira · Portfólio{% endblock %}
+{% block descricao %}Design, código e imagem. Marcas, sites e soluções digitais com propósito.{% endblock %}
+{% block og_titulo %}Washington Oliveira · Design, código e imagem{% endblock %}
+{% block og_descricao %}Marcas, sites e soluções digitais com propósito.{% endblock %}
+{% block head_extra %}
+<link rel="preload" href="{{ url_for('static', filename='fonts/barlow-condensed-latin-900-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+{% endblock %}
+{% set css_pagina = ['css/home/00-base.css', 'css/home/01-fundo.css', 'css/home/02-nav.css', 'css/home/03-divisor.css', 'css/home/04-hero.css', 'css/home/05-palco.css', 'css/home/06-filme.css', 'css/home/07-lab.css', 'css/home/08-numeros.css', 'css/home/09-projetos.css', 'css/home/10-servicos.css', 'css/home/11-contato.css'] %}
+
+{% block corpo %}
+<canvas id="bgPlus" aria-hidden="true"></canvas>
+
+{% include 'partials/_nav.html' %}
+
+<main id="topo">
+  {% include 'home/secoes/_hero.html' %}
+  {% include 'home/secoes/_movimento.html' %}
+  {% include 'home/secoes/_numeros.html' %}
+  {% include 'home/secoes/_projetos.html' %}
+  {% include 'home/secoes/_sobre.html' %}
+  {% include 'home/secoes/_dna.html' %}
+  {% include 'home/secoes/_filme.html' %}
+  {% include 'home/secoes/_servicos.html' %}
+  {% include 'home/secoes/_lab.html' %}
+  {% include 'home/secoes/_contato.html' %}
+</main>
+
+{% include 'partials/_footer.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/home/main.js') }}"></script>
+{% endblock %}

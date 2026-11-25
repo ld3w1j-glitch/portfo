@@ -1,0 +1,40 @@
+{% import 'manual/_macros.html' as mac %}
+{# ícone, título, detalhe, link #}
+{% set itens = [
+  ('baixar', 'Kit da marca', 'ZIP · logos, fontes, tokens e paleta', url_for('static', filename='kit/kit-da-marca.zip')),
+  ('arquivo', 'Manual em PDF', 'Este manual, 25 páginas', url_for('static', filename='kit/manual-da-marca.pdf')),
+  ('imagem', 'Guia de logos', 'SVG e PNG, 4 cores, regras', url_for('guia')),
+  ('camadas', 'Biblioteca de elementos', '165 elementos em SVG', url_for('biblioteca')),
+  ('pincel', 'Gerador de peças', '15 layouts, 7 temas, 8 formatos', url_for('gerador')),
+  ('codigo', 'Tokens · JSON', 'Cores, fontes e formas para código', url_for('marca_tokens_json')),
+  ('terminal', 'Tokens · CSS', 'Bloco :root pronto para colar', url_for('marca_tokens_css')),
+  ('pasta', 'Fontes · WOFF2', 'Barlow Condensed, Inter e JetBrains Mono (dentro do kit)', url_for('static', filename='kit/kit-da-marca.zip')),
+] %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Arquivos <span class="laranja-t">e downloads</span></h2></div>
+  <div class="corpo c-12" style="gap:36px;align-content:start;margin-top:4px">
+    <div class="corpo c2" style="gap:10px;flex:none;align-content:start">
+      {% for ic, titulo, detalhe, link in itens %}
+      <a class="arq" href="{{ link }}">
+        {{ mac.el('icones', ic, 'offwhite') }}
+        <div><b>{{ titulo }}</b><small>{{ detalhe }}</small></div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="pasta">
+      <p class="leg" style="margin-bottom:10px">Onde ficam no projeto</p>
+      <div class="cartao" style="font-family:var(--f-mono);font-size:12px;line-height:1.85">
+        static/img/logos/ <span class="mudo">· 32 SVG + 32 PNG</span><br>
+        static/img/elementos/ <span class="mudo">· 661 SVG</span><br>
+        static/img/reforma/ <span class="mudo">· SVG animados</span><br>
+        static/fonts/ <span class="mudo">· 6 WOFF2</span><br>
+        static/video/ <span class="mudo">· quadros WebP</span><br>
+        static/filme/ <span class="mudo">· filme MP4</span><br>
+        static/css/base/tokens.css <span class="mudo">· cores, fontes, formas</span><br>
+        marca.py <span class="mudo">· fonte única dos dados</span>
+      </div>
+      <p class="mudo" style="font-size:13px;margin-top:12px">Os tokens são a fonte única: mudou a cor aqui, mudou em todo o site e no manual.</p>
+    </div>
+  </div>
+</section>

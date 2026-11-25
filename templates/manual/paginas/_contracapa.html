@@ -1,0 +1,13 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg laranja sem-rodape" id="p-{{ id }}" data-versao="{{ m.VERSAO }}" style="justify-content:space-between;padding:72px">
+  {{ mac.logo('monograma-wo', 'grafite', '', 'position:absolute;right:-70px;bottom:-40px;width:720px;height:auto;opacity:.13') }}
+  {{ mac.logo('logo-horizontal', 'grafite', '', 'height:70px;width:auto;align-self:flex-start;position:relative') }}
+  <div style="position:relative">
+    <h1 class="t-xl" style="font-size:150px">Vamos<br>conversar?</h1>
+    <div class="barra-laranja" style="background:var(--wo-grafite);width:72px"></div>
+    <p class="lead">{{ m.PROMESSA }}</p>
+  </div>
+  <div style="display:flex;gap:40px;position:relative;font-family:var(--f-mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase">
+    <span>{{ m.CONTATO.email }}</span>{% if m.CONTATO.social %}<span>{{ m.CONTATO.social }}</span>{% endif %}<span>Manual da marca v{{ m.VERSAO }} · {{ m.DATA_EDICAO }}</span>
+  </div>
+</section>

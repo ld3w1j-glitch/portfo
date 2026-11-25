@@ -1,0 +1,16 @@
+  <!-- ===== Lab: ferramentas da marca, com o painel HUD ao fundo ===== -->
+  <section class="bloco lab" id="lab">
+    <canvas id="hud" class="hud" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="sec-head"><span class="rotulo">07 · Laboratório</span></div>
+      <h2 class="display h-lg">Ferramentas <span class="laranja">abertas</span></h2>
+      <p class="lead">O sistema da marca virou ferramenta: o manual da marca, uma biblioteca de elementos, um gerador de peças, um guia de logos e um simulador da reforma tributária.</p>
+      <div class="lab-cards">
+        <a class="lab-card cut" href="{{ url_for('manual') }}"><span class="seta">→</span><img src="{{ url_for('static', filename='img/elementos/icones/arquivo-offwhite.svg') }}" alt=""><span class="rotulo">25 páginas · PDF</span><h3 class="display h-md">Manual da marca</h3><p>Logos, cores, tipografia, elementos, movimento e aplicações num só lugar.</p></a>
+        <a class="lab-card cut" href="{{ url_for('biblioteca') }}"><span class="seta">→</span><img src="{{ url_for('static', filename='img/elementos/icones/camadas-offwhite.svg') }}" alt=""><span class="rotulo">165 elementos</span><h3 class="display h-md">Biblioteca de elementos</h3><p>Molduras, ícones, padrões e fundos em SVG, cada um em 4 cores.</p></a>
+        <a class="lab-card cut" href="{{ url_for('gerador') }}"><span class="seta">→</span><img src="{{ url_for('static', filename='img/elementos/icones/pincel-offwhite.svg') }}" alt=""><span class="rotulo">15 layouts</span><h3 class="display h-md">Gerador de peças</h3><p>Posts, carrosséis, cartão de visita e mais, com a identidade já aplicada.</p></a>
+        <a class="lab-card cut" href="{{ url_for('simulador') }}"><span class="seta">→</span><img src="{{ url_for('static', filename='img/elementos/icones/camadas-offwhite.svg') }}" alt=""><span class="rotulo">CBS · IBS</span><h3 class="display h-md">Simulador da reforma tributária</h3><p>Simulador do empresário, painel do contador e nota fiscal de exemplo.</p></a>
+        <a class="lab-card cut" href="{{ url_for('guia') }}"><span class="seta">→</span><img src="{{ url_for('static', filename='img/elementos/icones/salvar-offwhite.svg') }}" alt=""><span class="rotulo">SVG + PNG</span><h3 class="display h-md">Guia de logos</h3><p>Todas as versões dos logos, cores e regras de uso.</p></a>
+      </div>
+    </div>
+  </section>

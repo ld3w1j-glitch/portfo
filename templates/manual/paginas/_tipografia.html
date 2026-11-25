@@ -1,0 +1,22 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Três <span class="laranja-t">famílias</span></h2></div>
+  <p class="mudo" style="max-width:84ch;margin-bottom:12px">Uma para impactar, uma para ler, uma para os dados. Todas hospedadas junto do site, sem depender de serviços externos.</p>
+  <div class="corpo c3" style="gap:14px;align-content:stretch">
+    {% for f in m.FONTES %}
+    <div class="cartao fonte-card">
+      <div>
+        <span class="num">{{ '%02d'|format(loop.index) }} · {{ f.papel }}</span>
+        <h3 class="t-sm" style="font-size:34px">{{ f.nome }}</h3>
+        <div class="amostra-f" style="font-family:var({{ f.var }});{% if f.id == 'display' %}font-weight:900;text-transform:uppercase;font-size:84px{% elif f.id == 'texto' %}font-size:40px;line-height:1.1;font-weight:600{% else %}font-size:34px;line-height:1.2;font-weight:500;letter-spacing:.14em;text-transform:uppercase{% endif %}">{{ f.amostra }}</div>
+        <p class="glifos" style="font-family:var({{ f.var }});{% if f.id == 'display' %}font-weight:900{% endif %}">ABCDEFGHIJKLM NOPQRSTUVWXYZ 0123456789</p>
+      </div>
+      <div>
+        <p style="font-size:13.5px;margin-bottom:10px">{{ f.regra }}</p>
+        <div class="pesos">{% for p in f.pesos %}<span>{{ p }}</span>{% endfor %}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>

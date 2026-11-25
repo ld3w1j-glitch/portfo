@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block titulo %}Página não encontrada · Washington Oliveira{% endblock %}
+{% block descricao %}Essa página não existe.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block corpo %}
+<main class="wrap" style="min-height:100vh;display:grid;align-content:center;gap:24px;padding-block:64px">
+  <p class="rotulo"><span class="slashes"></span>&nbsp; Erro 404</p>
+  <h1 class="display h-xl">Página <span class="laranja">não encontrada</span></h1>
+  <p style="color:var(--wo-cinza);max-width:52ch">O endereço pode estar errado ou a página foi movida.</p>
+  <p><a class="btn btn-primario cut-sm" href="{{ url_for('home') }}">Voltar ao início →</a></p>
+</main>
+{% endblock %}

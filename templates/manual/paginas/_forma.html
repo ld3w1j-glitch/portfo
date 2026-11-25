@@ -1,0 +1,35 @@
+{% import 'manual/_macros.html' as mac %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Chanfro <span class="laranja-t">e grid</span></h2></div>
+  <div class="corpo c2" style="gap:44px;align-content:start;margin-top:4px">
+    <div>
+      <p class="leg" style="margin-bottom:10px">O corte chanfrado, assinatura da marca</p>
+      <p class="mudo" style="margin-bottom:18px;font-size:15px">Dois cantos opostos cortados em 45°: superior esquerdo e inferior direito. É o que dá o ar industrial a cartões, botões e molduras.</p>
+      <div class="forma-demo">
+        <figure><div class="q cut-14" style="width:210px;height:130px">corte · {{ m.FORMA.corte }} px</div><figcaption>Cartões e painéis · <code>.cut</code></figcaption></figure>
+        <figure><div class="q cut-8" style="width:150px;height:56px;background:var(--wo-offwhite)">corte-sm · {{ m.FORMA.corte_sm }} px</div><figcaption>Botões e chips · <code>.cut-sm</code></figcaption></figure>
+      </div>
+      <ul class="lista-simples" style="margin-top:22px">
+        <li>O corte é sempre nos mesmos dois cantos, em todas as peças.</li>
+        <li>Cartões usam {{ m.FORMA.corte }} px; botões e itens pequenos usam {{ m.FORMA.corte_sm }} px.</li>
+        <li>Ângulos retos nos outros dois cantos: nada de cantos arredondados.</li>
+      </ul>
+    </div>
+    <div>
+      <p class="leg" style="margin-bottom:10px">Grid e margens</p>
+      <p class="mudo" style="margin-bottom:14px;font-size:15px">Conteúdo centralizado com largura máxima de <b>{{ m.FORMA.max }} px</b> e margem lateral fluida: <code>{{ m.FORMA.gutter }}</code>.</p>
+      <div class="grid-demo">{% for i in range(12) %}<i></i>{% endfor %}</div>
+      <p class="leg" style="margin-top:8px">12 colunas · gutter de 12 px</p>
+      <div style="margin-top:26px">
+        <p class="leg" style="margin-bottom:10px">Tokens de forma</p>
+        <div class="cartao" style="font-family:var(--f-mono);font-size:12.5px;line-height:1.8">
+          --corte: {{ m.FORMA.corte }}px;<br>
+          --corte-sm: {{ m.FORMA.corte_sm }}px;<br>
+          --gutter: {{ m.FORMA.gutter }};<br>
+          --max: {{ m.FORMA.max }}px;
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

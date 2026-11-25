@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block titulo %}WO · Guia de uso dos logos{% endblock %}
+{% set css_pagina = ['css/paginas/guia-logos.css'] %}
+
+{% block corpo %}
+<div class="wrap">
+  <div class="topo">
+    <p class="rotulo"><span class="slashes"></span>&nbsp; Guia de uso · Washington Oliveira</p>
+    <h1 class="display h-xl" style="margin-top:16px">Logos <span class="laranja">&amp; uso</span></h1>
+    <p>Todos os logos são SVG (vetor, escala infinita, fundo transparente) e PNG de 2400&nbsp;px. Cada um existe em quatro cores. Escolha a cor pelo contraste com o fundo.</p>
+  </div>
+</div>
+
+<section><div class="wrap" id="logos"></div></section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="rotulo">Paleta</span></div>
+    <div class="paleta">
+      <div class="cor" style="background:#1A1A1A;border:1px solid var(--wo-linha)">Grafite<br>#1A1A1A</div>
+      <div class="cor" style="background:#F5F5EF;color:#1A1A1A">Off-white<br>#F5F5EF</div>
+      <div class="cor" style="background:#D9D9D9;color:#1A1A1A">Cinza<br>#D9D9D9</div>
+      <div class="cor" style="background:#F16A32;color:#1A1A1A">Laranja técnico<br>#F16A32</div>
+      <div class="cor" style="background:#365CE6">Azul digital<br>#365CE6</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="rotulo">Regras</span></div>
+    <div class="regras">
+      <div class="faca">
+        <h3 class="display h-md" style="margin-bottom:16px">Faça</h3>
+        <ul>
+          <li>Off-white sobre grafite, grafite sobre off-white ou laranja.</li>
+          <li>Use o <b>monograma WO</b> em tamanhos pequenos (ícones, favicon, menu).</li>
+          <li>Use o <b>avatar</b> ou o <b>selo</b> em perfis de redes sociais.</li>
+          <li>Deixe respiro ao redor igual à altura da letra “O”.</li>
+          <li>Prefira SVG na web; PNG para redes sociais e apresentações.</li>
+        </ul>
+      </div>
+      <div class="nao">
+        <h3 class="display h-md" style="margin-bottom:16px">Não faça</h3>
+        <ul>
+          <li>Não esticar nem distorcer a proporção.</li>
+          <li>Não usar laranja sobre azul, nem azul sobre laranja.</li>
+          <li>Não colocar logo escuro sobre fundo escuro, nem claro sobre claro.</li>
+          <li>Não aplicar sombra, contorno ou efeitos.</li>
+          <li>Não usar o logo horizontal abaixo de 120&nbsp;px de largura: troque pelo monograma.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid-erros">
+      <div class="erro t-grafite"><img src="{{ url_for('static', filename='img/logos/monograma-wo-grafite.svg') }}" alt=""><span style="color:#e5484d">✕ Escuro sobre escuro</span></div>
+      <div class="erro t-laranja"><img src="{{ url_for('static', filename='img/logos/monograma-wo-azul.svg') }}" alt=""><span style="color:#1A1A1A">✕ Azul sobre laranja</span></div>
+      <div class="erro t-offwhite"><img src="{{ url_for('static', filename='img/logos/logo-horizontal-grafite.svg') }}" alt="" style="transform:scaleX(1.5)"><span style="color:#c0262b">✕ Distorcido</span></div>
+    </div>
+  </div>
+</section>
+
+<section style="border-bottom:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="rotulo">Onde estão os arquivos</span></div>
+    <p style="color:var(--wo-cinza)">SVG: <code>static/img/logos/nome-cor.svg</code> · PNG: <code>static/img/logos/png/nome-cor.png</code></p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ferramentas/guia-logos.js') }}"></script>
+{% endblock %}

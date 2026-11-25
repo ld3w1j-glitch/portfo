@@ -1,0 +1,42 @@
+{% import 'manual/_macros.html' as mac %}
+{% set nomes = {'grafite':'Grafite','offwhite':'Off-white','laranja':'Laranja','azul':'Azul','cinza':'Cinza'} %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Proporção <span class="laranja-t">e contraste</span></h2></div>
+  <div class="corpo c2" style="gap:36px;align-content:start;margin-top:4px">
+    <div>
+      <p class="leg" style="margin-bottom:8px">Proporção de referência numa peça</p>
+      <div class="proporcao">
+        {% for c in m.cores_completas() %}
+        <div style="width:{{ c.prop }}%;background:{{ c.hex }};color:{{ '#1A1A1A' if c.id in ('offwhite','laranja','cinza') else '#F5F5EF' }};{% if c.id == 'grafite' %}box-shadow:inset 0 0 0 1px var(--wo-linha){% endif %}">{{ c.prop }}%</div>
+        {% endfor %}
+      </div>
+      <p class="mudo" style="font-size:14px;margin-bottom:22px">Mais grafite e off-white, menos laranja. Quanto menor a área, mais forte o destaque.</p>
+      <p class="leg" style="margin-bottom:10px">Regras de uso</p>
+      <ul class="lista-simples">
+        <li>Laranja é <b>destaque</b>: títulos-chave, barras, cantos, botões primários. Nunca o fundo de tudo.</li>
+        <li>Azul aparece em contexto de código, web e dados, em doses pequenas.</li>
+        <li>Laranja e azul não se tocam: não use um sobre o outro.</li>
+        <li>Sem degradês e sem transparência para criar novas cores. Use só a paleta.</li>
+        <li>Texto corrido: off-white sobre grafite ou grafite sobre off-white.</li>
+      </ul>
+    </div>
+    <div>
+      <p class="leg" style="margin-bottom:8px">Contraste do texto (WCAG)</p>
+      <table class="tab-contraste">
+        <thead><tr><th>Exemplo</th><th>Texto / fundo</th><th>Razão</th><th>Nível</th></tr></thead>
+        <tbody>
+          {% for l in m.tabela_contraste() %}
+          <tr>
+            <td><span class="ex" style="color:{{ l.ht }};background:{{ l.hf }};{% if l.hf == '#1A1A1A' %}box-shadow:inset 0 0 0 1px var(--wo-linha){% endif %}">Aa</span></td>
+            <td>{{ nomes[l.texto] }} / {{ nomes[l.fundo] }}</td>
+            <td class="n">{{ l.razao }}:1</td>
+            <td class="{{ 'ok' if l.nivel != 'Não passa' else 'ruim' }}">{{ l.nivel }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="mudo" style="font-size:12.5px;margin-top:10px">AA exige 4,5:1 para texto normal e 3:1 para texto grande (a partir de 24 px, ou 19 px em negrito). Calculado a partir dos valores HEX da paleta.</p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,23 @@
+{% import 'manual/_macros.html' as mac %}
+{# nome, estilo da amostra, medida, uso, texto #}
+{% set linhas = [
+  ('Display XL', 'font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:84px;line-height:.9', '56 – 150 px', 'Capas e primeira dobra. Uma por peça.', 'Design código'),
+  ('Título L', 'font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:56px;line-height:.92', '40 – 84 px', 'Título de seção.', 'Ferramentas abertas'),
+  ('Título M', 'font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:36px;line-height:.95', '26 – 40 px', 'Títulos de cartão e subtítulos.', 'Identidade visual completa'),
+  ('Texto de apoio', 'font-family:var(--f-texto);font-size:18px', '18 px', 'Frase de abertura abaixo do título.', 'Marcas, sites e soluções digitais com propósito.'),
+  ('Texto', 'font-family:var(--f-texto);font-size:16px;line-height:1.55', '16 px · linha 1,55', 'Texto corrido.', 'Logotipo, paleta e tipografia pensados para a marca funcionar em qualquer lugar.'),
+  ('Rótulo', 'font-family:var(--f-mono);font-weight:500;font-size:12px;letter-spacing:.28em;text-transform:uppercase', '12 px · 0,28 em', 'Seção, legenda, dado. Mono, caixa-alta.', '01 · Direção visual'),
+] %}
+<section class="pg" id="p-{{ id }}" data-versao="{{ m.VERSAO }}">
+  {{ mac.cab(secao, id) }}
+  <div class="sec-titulo"><h2 class="t-md">Hierarquia <span class="laranja-t">tipográfica</span></h2></div>
+  <div class="corpo" style="gap:0;align-content:start">
+    {% for nome, estilo, medida, uso, texto in linhas %}
+    <div class="escala-linha">
+      <div class="nm">{{ nome }}</div>
+      <div><div class="ex" style="{{ estilo }}">{{ texto }}</div><span class="uso">{{ uso }}</span></div>
+      <div class="md">{{ medida }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
