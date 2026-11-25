@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" width="900" height="220" role="img" aria-label="Fluxo: vendas menos créditos formam a base, sobre a qual incidem CBS e IBS">
+<style>
+.l{font:500 12px 'Consolas','Courier New',monospace;fill:#D9D9D9;letter-spacing:3px;text-transform:uppercase}
+.h{font:900 30px 'Impact','Arial Narrow',sans-serif;fill:#F5F5EF;letter-spacing:.5px}
+.g{font:900 30px 'Impact','Arial Narrow',sans-serif;fill:#1A1A1A}
+.lin{stroke:#F5F5EF;stroke-opacity:.25;stroke-width:2;stroke-dasharray:6 8;fill:none;animation:d 1.4s linear infinite}
+@keyframes d{to{stroke-dashoffset:-14}}
+.pt{fill:#F16A32}
+.m1{offset-path:path('M214 110H320');animation:m 2.6s linear infinite}
+.m2{offset-path:path('M214 110H320');animation:m 2.6s 1.3s linear infinite}
+.m3{offset-path:path('M600 110H686');animation:m 2.6s .6s linear infinite}
+.m4{offset-path:path('M600 110H686');animation:m 2.6s 1.9s linear infinite}
+@keyframes m{0%{offset-distance:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{offset-distance:100%;opacity:0}}
+.pulse{animation:p 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes p{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.pt{opacity:0}}
+</style>
+<path class="lin" d="M214 110H320"/><path class="lin" d="M600 110H686"/>
+<circle class="pt m1" r="6"/><circle class="pt m2" r="6"/><circle class="pt m3" r="6"/><circle class="pt m4" r="6"/>
+<polygon points="20,50 200,50 214,64 214,170 20,170" fill="#262626" stroke="#F5F5EF" stroke-opacity=".25"/>
+<text class="l" x="38" y="84">Vendas</text><text class="h" x="38" y="130">R$ 80.000</text>
+<polygon points="320,20 600,20 600,160 586,200 320,200" fill="#F16A32" class="pulse"/>
+<text class="l" x="340" y="58" style="fill:#1A1A1A">Base de cálculo</text>
+<text class="g" x="340" y="108" style="font-size:26px">VENDAS − CRÉDITOS</text>
+<text class="l" x="340" y="152" style="fill:#1A1A1A;letter-spacing:1px">compras com crédito reduzem</text>
+<polygon points="686,50 880,50 880,156 866,170 686,170" fill="#365CE6"/>
+<text class="l" x="704" y="84" style="fill:#F5F5EF">CBS + IBS</text><text class="h" x="704" y="130">IMPOSTO</text>
+<g transform="translate(214 150)"><rect x="-14" y="0" width="0" height="0"/></g>
+<text class="l" x="226" y="96">1</text><text class="l" x="612" y="96">2</text>
+</svg>

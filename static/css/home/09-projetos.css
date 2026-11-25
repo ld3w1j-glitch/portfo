@@ -1,0 +1,30 @@
+/* ---------- Projetos ---------- */
+section.bloco{padding:80px 0;position:relative}
+.filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:36px}
+.grade{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+@media(max-width:980px){.grade{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.grade{grid-template-columns:1fr}}
+.projeto.destaque{grid-column:span 2}
+@media(max-width:620px){.projeto.destaque{grid-column:auto}}
+.projeto .capa{position:relative;aspect-ratio:4/3;overflow:hidden;display:flex;align-items:flex-end;padding:18px;color:var(--wo-offwhite)}
+.projeto.destaque .capa{aspect-ratio:auto;min-height:100%;height:100%}
+.projeto .capa .num{position:absolute;top:14px;right:18px;font-family:var(--f-display);font-weight:900;font-size:72px;line-height:.8;opacity:.9;z-index:2}
+.projeto .capa .ico{position:relative;z-index:2;width:clamp(72px,26%,130px);height:auto;transition:transform .3s}
+.projeto:hover .capa .ico{transform:scale(1.12) rotate(-4deg)}
+.capa.design{background:var(--wo-laranja);color:var(--wo-grafite)}
+.capa.codigo{background:var(--wo-azul)}
+.capa.imagem{background:var(--wo-offwhite);color:var(--wo-grafite)}
+.capa .deco{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.2;pointer-events:none}
+.capa .cantos{position:absolute;inset:14px;pointer-events:none;opacity:.55;z-index:1;background:
+  linear-gradient(currentColor,currentColor) top left/34px 4px,linear-gradient(currentColor,currentColor) top left/4px 34px,
+  linear-gradient(currentColor,currentColor) top right/34px 4px,linear-gradient(currentColor,currentColor) top right/4px 34px,
+  linear-gradient(currentColor,currentColor) bottom left/34px 4px,linear-gradient(currentColor,currentColor) bottom left/4px 34px,
+  linear-gradient(currentColor,currentColor) bottom right/34px 4px,linear-gradient(currentColor,currentColor) bottom right/4px 34px;
+  background-repeat:no-repeat}
+.projeto .info{padding:20px 22px 24px}
+.projeto h3{margin:8px 0 6px}
+.projeto p{color:var(--wo-cinza);font-size:14px}
+.projeto .meta{display:flex;justify-content:space-between;align-items:center}
+.projeto .seta{font-family:var(--f-display);font-weight:900;font-size:22px;color:var(--wo-laranja)}
+.projeto.oculto{display:none}
+.aviso{margin-top:40px;padding:16px 20px;border:1px dashed var(--wo-linha);font-family:var(--f-mono);font-size:12px;color:var(--wo-cinza);letter-spacing:.06em}

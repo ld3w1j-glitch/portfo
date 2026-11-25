@@ -1,0 +1,10 @@
+/* ---------- Faixa de números ---------- */
+.numeros{border-top:1px solid var(--wo-linha);border-bottom:1px solid var(--wo-linha)}
+.numeros .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+.numeros .n{padding:28px 0;border-right:1px solid var(--wo-linha);padding-left:24px}
+.numeros .n:first-child{padding-left:0}
+.numeros .n:last-child{border-right:0}
+.numeros b{font-family:var(--f-display);font-weight:900;font-size:48px;line-height:1;display:block}
+.numeros .n .rotulo{display:flex;align-items:center;gap:8px;margin-top:4px}
+.numeros .n img{width:18px;height:18px;opacity:.8}
+@media(max-width:700px){.numeros .wrap{grid-template-columns:repeat(2,1fr)}.numeros .n:nth-child(2){border-right:0}.numeros .n:nth-child(3){padding-left:0}}

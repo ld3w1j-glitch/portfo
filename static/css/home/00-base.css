@@ -1,0 +1,3 @@
+/* Base da página inicial: ajustes globais e camadas */
+body{overflow-x:hidden}
+main,footer,header.nav{position:relative;z-index:1}

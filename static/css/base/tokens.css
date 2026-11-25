@@ -1,0 +1,43 @@
+/* ============================================================
+   WO · WASHINGTON OLIVEIRA — DESIGN TOKENS
+   Fonte única de verdade da identidade. Todo projeto novo
+   importa este arquivo e herda cores, tipografia e formas.
+   ============================================================ */
+/* Fontes hospedadas junto com o site (sem depender do Google Fonts) */
+@font-face{font-family:'Barlow Condensed';font-weight:700;font-style:normal;font-display:swap;src:url('../../fonts/barlow-condensed-latin-700-normal.woff2') format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:800;font-style:normal;font-display:swap;src:url('../../fonts/barlow-condensed-latin-800-normal.woff2') format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:900;font-style:normal;font-display:swap;src:url('../../fonts/barlow-condensed-latin-900-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-weight:400;font-style:normal;font-display:swap;src:url('../../fonts/inter-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-weight:600;font-style:normal;font-display:swap;src:url('../../fonts/inter-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-weight:500;font-style:normal;font-display:swap;src:url('../../fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2')}
+
+:root {
+  /* Cores */
+  --wo-grafite:  #1A1A1A;
+  --wo-offwhite: #F5F5EF;
+  --wo-cinza:    #D9D9D9;
+  --wo-laranja:  #F16A32;   /* laranja técnico: acento principal */
+  --wo-azul:     #365CE6;   /* azul digital: acento secundário (código/web) */
+
+  --wo-grafite-2: #262626;  /* superfícies sobre grafite */
+  --wo-grafite-3: #333333;
+  --wo-linha:     rgba(245,245,239,.16);
+
+  /* Tipografia */
+  --f-display: 'Barlow Condensed', 'Arial Narrow', sans-serif; /* Black, caixa-alta */
+  --f-texto:   'Inter', system-ui, sans-serif;
+  --f-mono:    'JetBrains Mono', ui-monospace, monospace;      /* rótulos espaçados */
+
+  /* Forma: corte chanfrado (assinatura da marca) */
+  --corte: 14px;
+  --corte-sm: 8px;
+
+  /* Espaço */
+  --gutter: clamp(16px, 4vw, 48px);
+  --max: 1280px;
+}
+
+/* Recortes reutilizáveis */
+.cut      { clip-path: polygon(var(--corte) 0,100% 0,100% calc(100% - var(--corte)),calc(100% - var(--corte)) 100%,0 100%,0 var(--corte)); }
+.cut-sm   { clip-path: polygon(var(--corte-sm) 0,100% 0,100% calc(100% - var(--corte-sm)),calc(100% - var(--corte-sm)) 100%,0 100%,0 var(--corte-sm)); }
+.cut-tr   { clip-path: polygon(0 0,calc(100% - var(--corte)) 0,100% var(--corte),100% 100%,0 100%); }

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" width="420" height="420" role="img" aria-label="Impressora emitindo uma nota fiscal com CBS e IBS">
+<style>
+.m{font:500 11px 'Consolas','Courier New',monospace;fill:#1A1A1A;letter-spacing:1px}
+.mb{font:700 12px 'Consolas','Courier New',monospace;fill:#1A1A1A}
+.h{font:900 20px 'Impact','Arial Narrow',sans-serif;fill:#1A1A1A;letter-spacing:1px}
+.sel{font:900 24px 'Impact','Arial Narrow',sans-serif;fill:#1f9d63;letter-spacing:2px}
+.papel{animation:s 7s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes s{0%{transform:translateY(120px)}35%,90%{transform:translateY(0)}100%{transform:translateY(120px)}}
+.carimbo{opacity:0;transform-box:fill-box;transform-origin:center;animation:c 7s infinite}
+@keyframes c{0%,48%{opacity:0;transform:scale(2.4) rotate(-12deg)}56%{opacity:.9;transform:scale(1) rotate(-12deg)}90%{opacity:.9;transform:scale(1) rotate(-12deg)}100%{opacity:0}}
+.led{animation:l 1s steps(1) infinite}@keyframes l{50%{fill:#0d5e3a}}
+.v{opacity:0;animation:v 7s infinite}.v2{animation-delay:.4s}.v3{animation-delay:.8s}
+@keyframes v{0%,22%{opacity:0}34%,90%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.v,.carimbo{opacity:1}.carimbo{transform:rotate(-12deg)}}
+</style>
+<ellipse cx="210" cy="400" rx="170" ry="10" fill="#000" opacity=".35"/>
+<clipPath id="c"><rect x="0" y="0" width="420" height="300"/></clipPath>
+<g clip-path="url(#c)"><g class="papel">
+<polygon points="110,30 310,30 310,296 110,296" fill="#F5F5EF"/>
+<text class="h" x="126" y="60">NOTA FISCAL</text>
+<line x1="126" y1="70" x2="294" y2="70" stroke="#1A1A1A" stroke-width="2"/>
+<g class="v"><text class="m" x="126" y="96">VALOR</text><text class="mb" x="226" y="96">R$ 1.000,00</text></g>
+<g class="v v2"><text class="m" x="126" y="124">CBS 8,8%</text><text class="mb" x="236" y="124">R$ 88,00</text></g>
+<g class="v v3"><text class="m" x="126" y="152">IBS 17,7%</text><text class="mb" x="232" y="152">R$ 177,00</text></g>
+<line x1="126" y1="168" x2="294" y2="168" stroke="#1A1A1A" stroke-dasharray="4 4"/>
+<text class="m" x="126" y="190">TOTAL TRIBUTOS</text><text class="mb" x="232" y="190">R$ 265,00</text>
+<g class="carimbo"><rect x="132" y="212" width="152" height="40" fill="none" stroke="#1f9d63" stroke-width="4"/><text class="sel" x="146" y="241">✓ EMITIDA</text></g>
+</g></g>
+<polygon points="40,290 380,290 380,372 350,392 40,392" fill="#1A1A1A"/>
+<rect x="40" y="282" width="340" height="14" fill="#333"/>
+<rect x="150" y="288" width="120" height="4" fill="#000"/>
+<rect class="led" x="62" y="326" width="16" height="16" fill="#3ecf8e"/>
+<polygon points="330,320 372,320 372,352 330,352" fill="#F16A32"/><text x="338" y="342" style="font:900 18px monospace;fill:#1A1A1A">&lt;/&gt;</text>
+</svg>

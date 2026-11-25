@@ -1,0 +1,17 @@
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:end;padding-top:72px;padding-bottom:72px;position:relative;z-index:1}
+.hero .bg-wo{position:absolute;right:-2%;top:-4%;width:min(56vw,760px);height:auto;opacity:.6;filter:brightness(1.5);z-index:0;user-select:none}
+.hero .faixa{position:absolute;right:0;top:0;bottom:0;width:90px;background:var(--wo-laranja);transform:skewX(-14deg) translateX(40px);opacity:.95;z-index:0}
+.hero h1 span.l{display:block}
+.hero p.lead{max-width:46ch;margin:28px 0 32px;color:var(--wo-cinza);font-size:18px}
+.hero .acoes{display:flex;gap:14px;flex-wrap:wrap}
+.hero .retrato{justify-self:center;width:min(100%,470px);margin-right:40px}
+.hero .retrato .moldura{position:relative;padding:34px}
+.hero .retrato img.av{width:100%;aspect-ratio:255/313;object-fit:contain;display:block}
+.hero .retrato .legenda{display:flex;justify-content:space-between;gap:12px;margin-top:20px;padding:0 4px}
+.hero .retrato .rotulo{font-size:11px}
+.hero .retrato .c{position:absolute;width:46px;height:46px}
+.hero .retrato .c1{top:0;left:0}.hero .retrato .c2{top:0;right:0;transform:rotate(90deg)}
+.hero .retrato .c3{bottom:0;right:0;transform:rotate(180deg)}.hero .retrato .c4{bottom:0;left:0;transform:rotate(-90deg)}
+@media(max-width:860px){.hero .wrap{grid-template-columns:1fr}.hero .retrato{justify-self:start;width:min(100%,320px);margin-right:0}.hero .faixa{width:50px}}

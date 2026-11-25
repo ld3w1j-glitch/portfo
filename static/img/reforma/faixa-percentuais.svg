@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 90" width="1200" height="90" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Faixa decorativa com porcentagens em movimento">
+<style>
+.t{font:900 34px 'Impact','Arial Narrow',sans-serif;letter-spacing:2px}
+.r{animation:r 22s linear infinite}
+@keyframes r{to{transform:translateX(-600px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<rect width="1200" height="90" fill="#F16A32"/>
+<g class="r">
+<g id="u"><text class="t" x="20" y="58" fill="#1A1A1A">CBS 8,8%</text><text class="t" x="190" y="58" fill="#F5F5EF">///</text><text class="t" x="270" y="58" fill="#1A1A1A">IBS 17,7%</text><text class="t" x="450" y="58" fill="#F5F5EF">///</text></g>
+<use href="#u" x="600"/><use href="#u" x="1200"/><use href="#u" x="1800"/>
+</g>
+</svg>

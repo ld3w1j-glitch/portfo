@@ -1,0 +1,16 @@
+/* ---------- Contato ---------- */
+.contato{position:relative;overflow:hidden}
+section.contato{padding-bottom:250px}
+.contato .terreno{position:absolute;left:0;bottom:0;width:100%;height:auto;aspect-ratio:1200/220;opacity:.55;pointer-events:none}
+.contato .alvo{position:absolute;right:-6%;top:50%;width:min(60vw,620px);height:auto;transform:translateY(-50%);opacity:.18;pointer-events:none}
+.contato .wrap{position:relative;z-index:1}
+.contato .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+.contato .globo{position:absolute;right:5%;top:30px;width:min(32vw,440px);height:auto;aspect-ratio:720/700;opacity:.6;pointer-events:none}
+@media(max-width:760px){.contato .globo{width:62vw;right:-10%;opacity:.5}}
+.contato h2 span{color:var(--wo-laranja)}
+.contato .btn img{width:18px;height:18px}
+@media(max-width:760px){.contato .wrap{grid-template-columns:1fr}}
+footer{border-top:1px solid var(--wo-linha);padding:24px 0;background:var(--wo-grafite)}
+footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+
+@media(prefers-reduced-motion:reduce){.palco{height:auto}.palco .fixo{position:static;height:auto;padding:60px 0}.palco .dica{display:none}}

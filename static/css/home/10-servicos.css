@@ -1,0 +1,13 @@
+/* ---------- Serviços ---------- */
+.servicos{background:var(--wo-offwhite);color:var(--wo-grafite)}
+.servicos .rotulo{color:#555}
+.servicos .sec-head::after{background:rgba(26,26,26,.2)}
+.servicos .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:3px solid var(--wo-grafite)}
+.servicos .trio>div{padding:28px 28px 32px 0;border-right:1px solid rgba(26,26,26,.2);padding-left:28px}
+.servicos .trio>div:first-child{padding-left:0}
+.servicos .trio>div:last-child{border-right:0}
+.servicos .trio .ic{width:52px;height:52px;display:block;margin-bottom:14px}
+.servicos .trio p{margin-top:12px;color:#444;max-width:34ch}
+.servicos .trio ul{margin-top:14px;list-style:none;font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#555}
+.servicos .trio li::before{content:"/ ";color:var(--wo-laranja);font-weight:500}
+@media(max-width:760px){.servicos .trio{grid-template-columns:1fr}.servicos .trio>div{border-right:0;border-bottom:1px solid rgba(26,26,26,.2);padding-left:0}}

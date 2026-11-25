@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" width="900" height="300" role="img" aria-label="Linha do tempo 2026 a 2033: IBS cresce, tributos atuais diminuem">
+<style>
+.l{font:500 12px 'Consolas','Courier New',monospace;fill:#D9D9D9;letter-spacing:2px}
+.y{font:900 22px 'Impact','Arial Narrow',sans-serif;fill:#F5F5EF;letter-spacing:1px}
+.g{font:500 11px 'Consolas','Courier New',monospace;fill:#D9D9D9;letter-spacing:2px}
+.ib{fill:#F16A32;transform-box:fill-box;transform-origin:bottom;transform:scaleY(0);animation:u 8s cubic-bezier(.3,.7,.2,1) infinite}
+.vl{fill:#6b6b6b;transform-box:fill-box;transform-origin:bottom;transform:scaleY(0);animation:u 8s cubic-bezier(.3,.7,.2,1) infinite}
+.cb{fill:#365CE6}
+@keyframes u{0%{transform:scaleY(0)}60%,92%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+@keyframes w{0%{transform:scaleY(1)}60%,92%{transform:scaleY(.0)}100%{transform:scaleY(1)}}
+.d1{animation-delay:.15s}.d2{animation-delay:.3s}.d3{animation-delay:.45s}.d4{animation-delay:.6s}.d5{animation-delay:.75s}.d6{animation-delay:.9s}.d7{animation-delay:1.05s}
+.cur{stroke:#F16A32;stroke-width:2;animation:cur 8s linear infinite}
+@keyframes cur{0%{transform:translateX(0)}60%,92%{transform:translateX(760px)}100%{transform:translateX(0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.ib{transform:scaleY(1)}.vl{transform:scaleY(1)}}
+</style>
+<line x1="60" y1="220" x2="880" y2="220" stroke="#F5F5EF" stroke-opacity=".3"/>
+<g>
+<rect class="vl" x="72" y="60" width="64" height="156"/><rect class="ib" x="72" y="216" width="64" height="4"/>
+<rect class="vl d1" x="178" y="60" width="64" height="156"/><rect class="ib d1" x="178" y="216" width="64" height="4"/>
+<rect class="vl d2" x="284" y="60" width="64" height="156"/><rect class="ib d2" x="284" y="216" width="64" height="4"/>
+<rect class="vl d3" x="390" y="60" width="64" height="144"/><rect class="ib d3" x="390" y="204" width="64" height="16"/>
+<rect class="vl d4" x="496" y="60" width="64" height="128"/><rect class="ib d4" x="496" y="188" width="64" height="32"/>
+<rect class="vl d5" x="602" y="60" width="64" height="112"/><rect class="ib d5" x="602" y="172" width="64" height="48"/>
+<rect class="vl d6" x="708" y="60" width="64" height="96"/><rect class="ib d6" x="708" y="156" width="64" height="64"/>
+<rect class="ib d7" x="814" y="60" width="64" height="160"/>
+</g>
+<g class="y"><text x="82" y="250">2026</text><text x="188" y="250">2027</text><text x="294" y="250">2028</text><text x="400" y="250">2029</text><text x="506" y="250">2030</text><text x="612" y="250">2031</text><text x="718" y="250">2032</text><text x="824" y="250">2033</text></g>
+<text class="g" x="60" y="278">TESTE</text><text class="g" x="400" y="278">TRANSIÇÃO DO IBS</text><text class="g" x="800" y="278">COMPLETA</text>
+<rect x="60" y="20" width="14" height="14" fill="#6b6b6b"/><text class="l" x="82" y="32">TRIBUTOS ATUAIS</text>
+<rect x="250" y="20" width="14" height="14" fill="#F16A32"/><text class="l" x="272" y="32">IBS</text>
+<line class="cur" x1="72" y1="46" x2="72" y2="222"/>
+</svg>

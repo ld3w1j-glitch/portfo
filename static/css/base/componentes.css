@@ -1,0 +1,54 @@
+/* ============================================================
+   WO — BIBLIOTECA DE COMPONENTES (requer tokens.css)
+   Elementos gráficos como classes: listras, pontilhado, mira,
+   rótulo mono, botões, tags, molduras, cards.
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--wo-grafite);color:var(--wo-offwhite);font-family:var(--f-texto);line-height:1.55;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gutter)}
+
+/* Tipografia */
+.display{font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:.88;letter-spacing:-.01em}
+.h-xl{font-size:clamp(56px,11vw,150px)}
+.h-lg{font-size:clamp(40px,6vw,84px)}
+.h-md{font-size:clamp(26px,3vw,40px);line-height:.95}
+.rotulo{font-family:var(--f-mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--wo-cinza)}
+.laranja{color:var(--wo-laranja)}
+
+/* Cabeçalho de seção: rótulo + linha */
+.sec-head{display:flex;align-items:center;gap:16px;margin-bottom:32px}
+.sec-head::after{content:"";flex:1;height:1px;background:var(--wo-linha)}
+
+/* Elementos gráficos */
+.listras{background:repeating-linear-gradient(-45deg,currentColor 0 4px,transparent 4px 9px)}
+.listras-fino{background:repeating-linear-gradient(-45deg,currentColor 0 1.5px,transparent 1.5px 6px)}
+.pontos{background-image:radial-gradient(currentColor 1.2px,transparent 1.4px);background-size:12px 12px}
+.slashes::before{content:"///";font-family:var(--f-display);font-weight:900;color:var(--wo-laranja);letter-spacing:.05em}
+.mira{position:relative;width:28px;height:28px;color:var(--wo-cinza)}
+.mira::before,.mira::after{content:"";position:absolute;background:currentColor}
+.mira::before{left:50%;top:0;bottom:0;width:1px}
+.mira::after{top:50%;left:0;right:0;height:1px}
+.barra-laranja{width:28px;height:4px;background:var(--wo-laranja)}
+.cantos{position:relative}
+.cantos::before,.cantos::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--wo-laranja);pointer-events:none}
+.cantos::before{top:8px;left:8px;border-right:0;border-bottom:0}
+.cantos::after{bottom:8px;right:8px;border-left:0;border-top:0}
+
+/* Botões */
+.btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:16px;padding:12px 22px;border:2px solid var(--wo-offwhite);color:var(--wo-offwhite);background:transparent;cursor:pointer;transition:.18s}
+.btn:hover{background:var(--wo-offwhite);color:var(--wo-grafite)}
+.btn-primario{background:var(--wo-laranja);border-color:var(--wo-laranja);color:var(--wo-grafite)}
+.btn-primario:hover{background:var(--wo-offwhite);border-color:var(--wo-offwhite)}
+
+/* Tags / filtros */
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:6px 12px;border:1px solid var(--wo-linha);color:var(--wo-cinza);background:transparent;cursor:pointer;transition:.18s}
+.tag:hover{border-color:var(--wo-offwhite);color:var(--wo-offwhite)}
+.tag.ativo{background:var(--wo-laranja);border-color:var(--wo-laranja);color:var(--wo-grafite)}
+
+/* Moldura/card */
+.card{background:var(--wo-grafite-2);position:relative;transition:transform .2s}
+.card:hover{transform:translateY(-4px)}
