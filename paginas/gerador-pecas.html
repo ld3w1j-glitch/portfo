@@ -55,6 +55,9 @@ canvas{max-width:100%;max-height:calc(100vh - 80px);box-shadow:0 20px 60px rgba(
     <div class="grupo destaque3d"><span class="rotulo">Novo · Modelos com o personagem 3D</span>
       <div class="layouts" id="layouts3d"></div></div>
 
+    <div class="grupo destaque3d"><span class="rotulo">Novo · Modelos com o notebook 3D</span>
+      <div class="layouts" id="layoutsnote"></div><p class="dica">Em "Sua imagem na tela", envie a foto do projeto no campo Principal, mais abaixo.</p></div>
+
     <div class="grupo"><span class="rotulo">Layout</span>
       <div class="layouts" id="layouts"></div></div>
 
@@ -96,6 +99,14 @@ canvas{max-width:100%;max-height:calc(100vh - 80px);box-shadow:0 20px 60px rgba(
       <label class="campo">Subir ou descer<input type="range" data-k="py" min="-40" max="60" style="width:100%;accent-color:var(--wo-laranja)"></label>
       <div class="opcoes"><label><input type="checkbox" data-k="pespelho">Espelhar</label></div>
       <p class="dica">O personagem fica por cima da peça e continua ao trocar de layout. Ajuste tamanho e posição para não cobrir o texto.</p>
+    </div>
+
+    <div class="grupo"><span class="rotulo">Notebook 3D</span>
+      <label class="campo">Variação<select id="notebook" data-k="notebook"></select></label>
+      <div class="poses" id="notes"></div>
+      <label class="campo">Posição (fora dos modelos)<select data-k="npos"><option value="direita">Direita</option><option value="centro">Centro</option><option value="esquerda">Esquerda</option></select></label>
+      <label class="campo">Tamanho<input type="range" data-k="ntam" min="20" max="90" style="width:100%;accent-color:var(--wo-laranja)"></label>
+      <label class="campo">Subir ou descer<input type="range" data-k="ny" min="-30" max="60" style="width:100%;accent-color:var(--wo-laranja)"></label>
     </div>
 
     <div class="grupo"><span class="rotulo">Imagens (Projeto · Antes e depois)</span>
@@ -205,7 +216,7 @@ const PERSONAGEM_PADRAO = {personagem:'nenhum', ppos:'direita', ptam:45, py:0, p
 /* com o personagem 3D na peça, o avatar ilustrado começa desligado (dá para religar na caixa "Avatar") */
 const semDuplicar = () => { if (st.personagem !== 'nenhum') st.avatar = false; };
 
-const st = Object.assign({formato:'post', layout:'poster', tema:'escuro'}, PERSONAGEM_PADRAO, BASE, EXEMPLOS.poster);
+const st = Object.assign({formato:'post', layout:'poster', tema:'escuro', notebook:'nenhum', npos:'direita', ntam:40, ny:0}, PERSONAGEM_PADRAO, BASE, EXEMPLOS.poster);
 let foto = null, foto2 = null;
 
 /* ---------------------------------------------------------------- imagens SVG embutidas */
@@ -1210,7 +1221,7 @@ async function Lcena(ctx, W, H, t){
    Incluído no gerador por montar_gerador.py. A pose pode ser trocada no painel "Personagem 3D". */
 const LAYOUTS_3D = {p3d_ola:'Olá, eu sou', p3d_metodo:'Método', p3d_servicos:'Serviços 3D', p3d_dica:'Dica em balão',
   p3d_sinais:'3 sinais', p3d_chamada:'Vamos conversar'};
-const EH_3D = l => l.startsWith('p3d_');
+const EH_3D = l => l.startsWith('p3d_') || l.startsWith('nb_');
 
 const BASE_3D = {num:'', logo:true, selo:false, faixa:false, wogigante:false, avatar:false, transparente:false, op:7, pespelho:false, ptam:45, py:0};
 const EXEMPLOS_3D = {
@@ -1407,15 +1418,183 @@ async function Lp3d_chamada(ctx, W, H, t){
   drawRuns(ctx, acao.lay, pad + 28*s + Math.max(0, (cw - 56*s - aw)/2), cy + ch*.56 + (ch*.31 - acao.s)/2, acao.s, 1, acao.font, true, '#F5F5EF', '#F16A32');
 }
 
+/* ---------------------------------------------------------------- notebook voxel: variações e modelos prontos
+   Imagens renderizadas no Blender (producao/personagem-poses/renderizar_notebooks.py). Usa os auxiliares de gerador_layouts_3d.js. */
+const NOTES = {nenhum:'Sem notebook', 'note-codigo':'Tela de código', 'note-painel':'Painel de sistema', 'note-marca':'Identidade visual',
+  'note-video':'Edição de vídeo', 'note-planilha':'Planilha manual', 'note-virado':'Virado para o outro lado', 'note-tampa':'Tampa com WO',
+  'note-de-cima':'Visto de cima', 'note-frente':'De frente', 'note-com-boneco':'Com o personagem'};
+const noteUrl = n => `/static/img/notebook/${n}.webp`;
+const NOTE_PADRAO = {notebook:'nenhum', npos:'direita', ntam:40, ny:0};
+const TELA_FRENTE = [0.106, 0.096, 0.788, 0.6089];        // onde fica a tela em note-frente (fração da imagem)
+const LAYOUTS_NOTE = {nb_sistema:'Sistema sob medida', nb_codigo:'Do código ao ar', nb_tela:'Sua imagem na tela',
+  nb_comparar:'Planilha ou sistema', nb_frentes:'Três frentes', nb_juntos:'Mão na massa'};
+
+const cacheNotes = new Map();
+function carregarNote(n){
+  if (!cacheNotes.has(n)) cacheNotes.set(n, new Promise(res => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => { cacheNotes.delete(n); res(null); };
+    im.src = noteUrl(n);
+  }));
+  return cacheNotes.get(n);
+}
+
+const EXEMPLOS_NOTE = {
+  nb_sistema:  Object.assign({}, BASE_3D, {titulo:'Sistema\n*sob medida*', sub:'Processos organizados no lugar de planilhas soltas.', rotulo:'Programação', tags:'@washingtonolila', lista:'Dados\nRegras\nTelas', padrao:'grade', notebook:'note-painel', ntam:40, ny:0}),
+  nb_codigo:   Object.assign({}, BASE_3D, {titulo:'Da ideia\nao *ar*', sub:'Sites e ferramentas feitos para o seu negócio.', rotulo:'Código', tags:'@washingtonolila', lista:'Sites\nLanding pages\nFerramentas', padrao:'pontos', notebook:'note-codigo', ntam:40, ny:0}),
+  nb_tela:     Object.assign({}, BASE_3D, {titulo:'Projeto *no ar*', sub:'Veja como ficou.', rotulo:'Portfólio', tags:'@washingtonolila', lista:'', padrao:'listras-finas', notebook:'note-frente', ntam:40, ny:0}),
+  nb_comparar: Object.assign({}, BASE_3D, {titulo:'Planilha\nou *sistema?*', sub:'', rotulo:'Comparativo', tags:'@washingtonolila', lista:'Planilha manual\nSistema sob medida', padrao:'nenhum', notebook:'note-planilha', ntam:40, ny:0}),
+  nb_frentes:  Object.assign({}, BASE_3D, {titulo:'Três frentes,\n*um só traço*', sub:'', rotulo:'O que eu faço', tags:'@washingtonolila', lista:'Identidade visual\nSistemas\nProdução visual', padrao:'grade', notebook:'note-marca', ntam:40, ny:0}),
+  nb_juntos:   Object.assign({}, BASE_3D, {titulo:'Mão na\n*massa*', sub:'Do objetivo à entrega, no mesmo lugar.', rotulo:'Bastidores', tags:'@washingtonolila', lista:'', padrao:'pontos', notebook:'note-com-boneco', ntam:40, ny:0}),
+};
+
+/* desenha uma imagem inteira dentro de uma caixa; devolve o retângulo usado */
+function encaixar(ctx, im, box, t, aBase=true, zoom=1){
+  let w = box.w, h = w*im.naturalHeight/im.naturalWidth;
+  if (h > box.h){ h = box.h; w = h*im.naturalWidth/im.naturalHeight; }
+  w *= zoom; h *= zoom;
+  const x = box.x + (box.w - w)/2, y = aBase ? box.y + box.h - h : box.y + (box.h - h)/2;
+  if (!st.transparente){
+    ctx.save(); ctx.globalAlpha = .26; ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(x + w/2, y + h*.97, w*.43, h*.04, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  }
+  ctx.drawImage(im, x, y, w, h);
+  return {x, y, w, h};
+}
+async function noteNaCaixa(ctx, H, t, nome, box, aBase=true){
+  if (nome === 'nenhum') return null;
+  const im = await carregarNote(nome); if (!im) return null;
+  ctx.save();
+  if (st.pespelho){ ctx.translate(2*box.x + box.w, 0); ctx.scale(-1, 1); }
+  const r = encaixar(ctx, im, {x:box.x, y:box.y - H*st.ny/100, w:box.w, h:box.h}, t, aBase, st.ntam/40);
+  ctx.restore();
+  return r;
+}
+
+/* título no topo (ou à esquerda no formato deitado); devolve a área que sobra para o notebook */
+function areaNote(ctx, W, H, t, k, tituloMax){
+  const {m, s, pad, wide} = k;
+  if (wide){
+    cabeca3d(ctx, t, s, pad, H*.24, W*.38, H*.44, H*.17, m*.037);
+    return {x:W*.43, y:H*.14, w:W*.55, h:H*.78};
+  }
+  const y = cabeca3d(ctx, t, s, pad, pad + 100*s, W - 2*pad, H*.22, m*tituloMax, m*.034);
+  return {x:pad*.4, y:y + 24*s, w:W - pad*.8, h:H - y - 24*s - pad*1.5};
+}
+
+/* etiquetas em fila, centralizadas numa faixa; quebra em duas linhas se precisar */
+function filaEtiquetas(ctx, itens, x, y, w, size){
+  const gap = size*.55;
+  const linhas = [[]]; let usado = 0;
+  itens.forEach(it => {
+    const lw = medirEtiqueta(ctx, it, size);
+    if (usado + lw > w && linhas[linhas.length-1].length){ linhas.push([]); usado = 0; }
+    linhas[linhas.length-1].push([it, lw]); usado += lw + gap;
+  });
+  linhas.forEach((ln, i) => {
+    let cx = x + (w - ln.reduce((a, [, lw]) => a + lw, 0) - gap*(ln.length-1))/2;
+    ln.forEach(([it, lw]) => { etiqueta(ctx, cx, y + i*size*2.2, it, size, ''); cx += lw + gap; });
+  });
+  return linhas.length*size*2.2;
+}
+
+async function noteComEtiquetas(ctx, W, H, t){
+  const k = med(W, H), {m, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const a = areaNote(ctx, W, H, t, k, .145);
+  const itens = linhas3d(4), size = Math.min(m*.04, a.h*.07);
+  const faixa = itens.length ? size*(wide ? 2.4 : 2.6) : 0;
+  await noteNaCaixa(ctx, H, t, st.notebook, {x:a.x, y:a.y, w:a.w, h:a.h - faixa - size*.4}, wide ? true : false);
+  if (itens.length) filaEtiquetas(ctx, itens, a.x, a.y + a.h - faixa, a.w, size);
+  rodape3d(ctx, H, t, m, pad);
+}
+const Lnb_sistema = noteComEtiquetas, Lnb_codigo = noteComEtiquetas;
+
+async function Lnb_tela(ctx, W, H, t){
+  const k = med(W, H), {m, pad} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const a = areaNote(ctx, W, H, t, k, .115);
+  const r = await noteNaCaixa(ctx, H, t, st.notebook, a, false);
+  if (r && st.notebook === 'note-frente' && foto){
+    const [fx, fy, fw, fh] = TELA_FRENTE;
+    const sx = r.x + r.w*(st.pespelho ? 1 - fx - fw : fx), sy = r.y + r.h*fy, sw = r.w*fw, sh = r.h*fh;
+    const esc = Math.min(sw/foto.naturalWidth, sh/foto.naturalHeight)   /* a imagem aparece inteira */, iw = foto.naturalWidth*esc, ih = foto.naturalHeight*esc;
+    ctx.save(); ctx.beginPath(); ctx.rect(sx, sy, sw, sh); ctx.clip(); ctx.fillStyle = '#1A1A1A'; ctx.fillRect(sx, sy, sw, sh);
+    ctx.drawImage(foto, sx + (sw - iw)/2, sy + (sh - ih)/2, iw, ih); ctx.restore();
+  }
+  rodape3d(ctx, H, t, m, pad);
+}
+
+async function Lnb_comparar(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const y = cabeca3d(ctx, t, s, pad, pad + 100*s, wide ? W*.7 : W - 2*pad, H*(wide ? .3 : .2), wide ? H*.15 : m*.12, m*.032) + 20*s;
+  const nomes = linhas3d(2), fim = H - pad*1.9, size = Math.min(m*.042, H*.034);
+  const lados = [['note-planilha', '✕', '#F16A32', '#1A1A1A', '#1A1A1A'], [st.notebook === 'note-planilha' ? 'note-painel' : st.notebook, '✓', '#365CE6', '#F5F5EF', '#1A1A1A']];
+  for (let i = 0; i < 2; i++){
+    const box = wide ? {x:i*W/2 + pad*.5, y, w:W/2 - pad, h:fim - y}
+                     : {x:i ? W*.28 : 0, y:y + i*(fim - y)/2, w:W*.72, h:(fim - y)/2};
+    await noteNaCaixa(ctx, H, t, lados[i][0], {x:box.x, y:box.y, w:box.w, h:box.h - size*1.1}, true);
+    const txt = nomes[i] || '', lw = medirEtiqueta(ctx, txt, size);
+    const ex = wide ? box.x + (box.w - lw)/2 : (i ? pad : W - pad - lw);
+    const ey = wide ? box.y + box.h - size*1.5 : box.y + box.h*.38;
+    etiqueta(ctx, ex, ey, txt, size, lados[i][1], lados[i][2], lados[i][4] === '#1A1A1A' && i ? '#F5F5EF' : '#1A1A1A', i ? '#1A1A1A' : '#1A1A1A');
+  }
+  rodape3d(ctx, H, t, m, pad);
+}
+
+async function Lnb_frentes(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const y = cabeca3d(ctx, t, s, pad, pad + 100*s, wide ? W*.7 : W - 2*pad, H*(wide ? .3 : .19), wide ? H*.15 : m*.115, m*.032) + 24*s;
+  const telas = ['note-marca', 'note-painel', 'note-video'], nomes = linhas3d(3), fim = H - pad*1.9;
+  const size = Math.min(m*.037, H*.032);
+  for (let i = 0; i < 3; i++){
+    const txt = nomes[i] || '', lw = medirEtiqueta(ctx, txt, size);
+    if (wide){
+      const cw = (W - pad)/3, bx = pad*.5 + i*cw;
+      await noteNaCaixa(ctx, H, t, telas[i], {x:bx, y, w:cw, h:fim - y - size*2.6}, true);
+      etiqueta(ctx, bx + (cw - lw)/2, fim - size*1.9, txt, size, String(i+1));
+    } else {                                                    // em pé: três faixas, alternando o lado do notebook
+      const fh = (fim - y)/3, by = y + i*fh, aEsq = i % 2 === 0;
+      await noteNaCaixa(ctx, H, t, telas[i], {x:aEsq ? pad*.3 : W*.45 - pad*.3, y:by, w:W*.55, h:fh*.98}, true);
+      etiqueta(ctx, aEsq ? W - pad - lw : pad, by + fh*.42, txt, size, String(i+1));
+    }
+  }
+  rodape3d(ctx, H, t, m, pad);
+}
+
+async function Lnb_juntos(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const a = areaNote(ctx, W, H, t, k, .155);
+  if (!k.wide){ ctx.fillStyle = t.panel; chamfer(ctx, pad, a.y + a.h*.8, W - 2*pad, a.h*.17, 30*s); ctx.fill(); }
+  await noteNaCaixa(ctx, H, t, st.notebook, {x:a.x, y:a.y, w:a.w, h:a.h*.94}, true);
+  rodape3d(ctx, H, t, m, pad);
+}
+
+/* notebook solto por cima dos outros layouts */
+async function notebookSolto(ctx, W, H){
+  if (st.notebook === 'nenhum' || EH_3D(st.layout)) return;
+  const im = await carregarNote(st.notebook); if (!im) return;
+  const pad = Math.round(Math.min(W, H)*.035);
+  let w = W*st.ntam/100, h = w*im.naturalHeight/im.naturalWidth;
+  if (h > H*.9){ h = H*.9; w = h*im.naturalWidth/im.naturalHeight; }
+  const x = st.npos === 'esquerda' ? pad : st.npos === 'centro' ? (W - w)/2 : W - w - pad;
+  ctx.drawImage(im, x, H - h - pad - H*st.ny/100, w, h);
+}
+
 const LAYOUTS = {poster:Lposter, tipografico:Ltipografico, citacao:Lcitacao, projeto:Lprojeto,
   carrossel:Lcarrossel, servicos:Lservicos, antesdepois:Lantesdepois, destaque:Ldestaque, cartao:Lcartao, verso:Lverso,
   processo:Lprocesso, checklist:Lchecklist, depoimento:Ldepoimento, evento:Levento, comparacao:Lcomparacao,
   listanum:Llistanum, pergunta:Lpergunta, dica:Ldica, oferta:Loferta, lancamento:Llancamento, agenda:Lagenda, perfil:Lperfil,
   certificado:Lcertificado, ebook:Lebook, cracha:Lcracha, videocapa:Lvideocapa, lowerthird:Llowerthird, legenda:Llegenda,
   abertura:Labertura, telafinal:Ltelafinal, cena:Lcena,
-  p3d_ola:Lp3d_ola, p3d_metodo:Lp3d_metodo, p3d_servicos:Lp3d_servicos, p3d_dica:Lp3d_dica, p3d_sinais:Lp3d_sinais, p3d_chamada:Lp3d_chamada};
-Object.assign(LAYOUTS_NOMES, LAYOUTS_3D);
-Object.assign(EXEMPLOS, EXEMPLOS_3D);
+  p3d_ola:Lp3d_ola, p3d_metodo:Lp3d_metodo, p3d_servicos:Lp3d_servicos, p3d_dica:Lp3d_dica, p3d_sinais:Lp3d_sinais, p3d_chamada:Lp3d_chamada,
+  nb_sistema:Lnb_sistema, nb_codigo:Lnb_codigo, nb_tela:Lnb_tela, nb_comparar:Lnb_comparar, nb_frentes:Lnb_frentes, nb_juntos:Lnb_juntos};
+Object.assign(LAYOUTS_NOMES, LAYOUTS_3D, LAYOUTS_NOTE);
+Object.assign(EXEMPLOS, EXEMPLOS_3D, EXEMPLOS_NOTE);
 
 /* ---------------------------------------------------------------- personagem 3D */
 const cachePoses = new Map();
@@ -1455,7 +1634,7 @@ async function render(){
   const ctx = off.getContext('2d');
   if (!st.transparente){ ctx.fillStyle = t.bg; ctx.fillRect(0, 0, f.w, f.h); }
   try { await LAYOUTS[st.layout](ctx, f.w, f.h, t); } catch (e){ console.error(e); }
-  try { await personagemDraw(ctx, f.w, f.h); } catch (e){ console.error(e); }
+  try { await personagemDraw(ctx, f.w, f.h); await notebookSolto(ctx, f.w, f.h); } catch (e){ console.error(e); }
   if (my !== tok) return;
   cv.width = f.w; cv.height = f.h; cv.getContext('2d').drawImage(off, 0, 0);
   document.getElementById('info').textContent = `${f.n} · ${LAYOUTS_NOMES[st.layout]} · ${t.n}`;
@@ -1468,6 +1647,15 @@ $('formato').innerHTML = Object.entries(FORMATOS).map(([k,v]) => `<option value=
 $('padrao').innerHTML = Object.entries(PADROES).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
 const botaoLayout = ([k,v]) => `<button class="tag" data-l="${k}">${v}</button>`;
 $('layouts3d').innerHTML = Object.entries(LAYOUTS_3D).map(botaoLayout).join('');
+$('layoutsnote').innerHTML = Object.entries(LAYOUTS_NOTE).map(botaoLayout).join('');
+$('notebook').innerHTML = Object.entries(NOTES).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+$('notes').innerHTML = Object.keys(NOTES).filter(k => k !== 'nenhum').map(k =>
+  `<button type="button" data-note="${k}" title="${NOTES[k]}" aria-label="Notebook: ${NOTES[k]}"><img src="${noteUrl(k)}" alt="" loading="lazy"></button>`).join('');
+$('notes').addEventListener('click', e => {
+  const b = e.target.closest('[data-note]'); if (!b) return;
+  st.notebook = st.notebook === b.dataset.note ? 'nenhum' : b.dataset.note;
+  sincronizar(); agendar();
+});
 $('layouts').innerHTML = Object.entries(LAYOUTS_NOMES).filter(([k]) => !EH_3D(k)).map(([k,v]) => `<button class="tag" data-l="${k}">${v}</button>`).join('');
 $('temas').innerHTML = Object.entries(TEMAS).map(([k,v]) => `<button data-t="${k}" style="background:${v.bg};color:${v.fg}">${v.n}</button>`).join('');
 
@@ -1487,7 +1675,8 @@ function sincronizar(){
     const v = st[el.dataset.k];
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   });
-  document.querySelectorAll('#layouts .tag, #layouts3d .tag').forEach(b => b.classList.toggle('ativo', b.dataset.l === st.layout));
+  document.querySelectorAll('#notes button').forEach(b => b.classList.toggle('ativo', b.dataset.note === st.notebook));
+  document.querySelectorAll('#layouts .tag, #layouts3d .tag, #layoutsnote .tag').forEach(b => b.classList.toggle('ativo', b.dataset.l === st.layout));
   document.querySelectorAll('#temas button').forEach(b => b.classList.toggle('ativo', b.dataset.t === st.tema));
 }
 document.addEventListener('input', e => {
@@ -1496,12 +1685,13 @@ document.addEventListener('input', e => {
   if (!el.dataset.k) return;
   st[el.dataset.k] = el.type === 'checkbox' ? el.checked : (el.type === 'range' ? +el.value : el.value);
   if (el.dataset.k === 'personagem'){ semDuplicar(); sincronizar(); }
+  if (el.dataset.k === 'notebook') sincronizar();
   agendar();
 });
 function escolherLayout(e){
   const b = e.target.closest('[data-l]'); if (!b) return;
   const antigo = st.layout;
-  if (EH_3D(antigo) && !EH_3D(b.dataset.l)) Object.assign(st, PERSONAGEM_PADRAO);   // o boneco do modelo não vai junto para os outros layouts
+  if (EH_3D(antigo)) Object.assign(st, PERSONAGEM_PADRAO, NOTE_PADRAO);   // os objetos do modelo não vão junto para os outros layouts
   st.layout = b.dataset.l; Object.assign(st, BASE, EXEMPLOS[st.layout]);
   if (FORMATO_PADRAO[st.layout]) st.formato = FORMATO_PADRAO[st.layout];
   else if (FORMATO_PADRAO[antigo] && st.formato === FORMATO_PADRAO[antigo]) st.formato = 'post';
@@ -1510,6 +1700,7 @@ function escolherLayout(e){
 }
 $('layouts').addEventListener('click', escolherLayout);
 $('layouts3d').addEventListener('click', escolherLayout);
+$('layoutsnote').addEventListener('click', escolherLayout);
 $('temas').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
   st.tema = b.dataset.t; sincronizar(); agendar();
@@ -1519,7 +1710,7 @@ function lerImagem(inputId, destino){
   $(inputId).addEventListener('change', e => {
     const f = e.target.files[0]; if (!f){ destino(null); agendar(); return; }
     const im = new Image();
-    im.onload = () => { destino(im); if (st.layout !== 'projeto' && st.layout !== 'antesdepois'){ st.layout = 'projeto'; Object.assign(st, BASE, EXEMPLOS.projeto); sincronizar(); } agendar(); };
+    im.onload = () => { destino(im); if (st.layout !== 'projeto' && st.layout !== 'antesdepois' && st.layout !== 'nb_tela'){ st.layout = 'projeto'; Object.assign(st, BASE, EXEMPLOS.projeto); sincronizar(); } agendar(); };
     im.src = URL.createObjectURL(f);
   });
 }
