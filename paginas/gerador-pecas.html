@@ -33,6 +33,9 @@ label.campo{display:block;margin-bottom:10px;font-family:var(--f-mono);font-size
 .poses button.ativo{border-color:var(--wo-laranja)}
 .poses img{width:100%;height:100%;object-fit:contain;display:block}
 .layouts .tag{padding:10px;text-align:center}
+.objgrade{max-height:238px;overflow:auto;grid-template-columns:repeat(4,1fr)}
+.objbotoes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.objbotoes button{cursor:pointer;padding:9px 6px}
 .acoes{position:sticky;bottom:-40px;background:var(--wo-grafite);padding:16px 0 40px;margin-top:20px;display:grid;gap:10px;z-index:2}
 .palco{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;background:
  repeating-conic-gradient(#222 0 25%,#262626 0 50%) 50%/24px 24px;min-height:0}
@@ -51,6 +54,12 @@ canvas{max-width:100%;max-height:calc(100vh - 80px);box-shadow:0 20px 60px rgba(
 
     <div class="grupo"><span class="rotulo">Formato</span>
       <select id="formato"></select></div>
+
+    <div class="grupo destaque3d"><span class="rotulo">Novo · Modelos com o meu quarto 3D</span>
+      <div class="layouts" id="layoutscena"></div>
+      <label class="campo" style="margin:12px 0 0">Imagem do modelo<select id="cena" data-k="cena"></select></label>
+      <label class="campo">Tamanho da imagem<input type="range" data-k="ctam" min="50" max="160" style="width:100%;accent-color:var(--wo-laranja)"></label>
+      <label class="campo">Subir ou descer a imagem<input type="range" data-k="cy" min="-30" max="30" style="width:100%;accent-color:var(--wo-laranja)"></label></div>
 
     <div class="grupo destaque3d"><span class="rotulo">Novo · Modelos com o personagem 3D</span>
       <div class="layouts" id="layouts3d"></div></div>
@@ -107,6 +116,25 @@ canvas{max-width:100%;max-height:calc(100vh - 80px);box-shadow:0 20px 60px rgba(
       <label class="campo">Posição (fora dos modelos)<select data-k="npos"><option value="direita">Direita</option><option value="centro">Centro</option><option value="esquerda">Esquerda</option></select></label>
       <label class="campo">Tamanho<input type="range" data-k="ntam" min="20" max="90" style="width:100%;accent-color:var(--wo-laranja)"></label>
       <label class="campo">Subir ou descer<input type="range" data-k="ny" min="-30" max="60" style="width:100%;accent-color:var(--wo-laranja)"></label>
+    </div>
+
+    <div class="grupo"><span class="rotulo">Cenário 3D · peças soltas</span>
+      <label class="campo">Grupo<select id="objgrupo"></select></label>
+      <div class="poses objgrade" id="objgrade"></div>
+      <p class="dica">Clique numa peça para colocar na arte. Pode colocar várias e arrastar cada uma na prévia.</p>
+      <label class="campo" style="margin-top:12px">Peça selecionada<select id="objlista"></select></label>
+      <div id="objajustes" hidden>
+        <label class="campo">Tamanho<input type="range" id="objtam" min="4" max="140" style="width:100%;accent-color:var(--wo-laranja)"></label>
+        <label class="campo">Horizontal<input type="range" id="objx" min="-10" max="110" style="width:100%;accent-color:var(--wo-laranja)"></label>
+        <label class="campo">Vertical<input type="range" id="objy" min="-10" max="110" style="width:100%;accent-color:var(--wo-laranja)"></label>
+        <div class="objbotoes">
+          <button type="button" class="tag" id="objespelhar">Espelhar</button>
+          <button type="button" class="tag" id="objfrente">Para a frente</button>
+          <button type="button" class="tag" id="objtras">Para trás</button>
+          <button type="button" class="tag" id="objremover">Remover</button>
+          <button type="button" class="tag" id="objlimpar">Remover todas</button>
+        </div>
+      </div>
     </div>
 
     <div class="grupo"><span class="rotulo">Imagens (Projeto · Antes e depois)</span>
@@ -216,7 +244,7 @@ const PERSONAGEM_PADRAO = {personagem:'nenhum', ppos:'direita', ptam:45, py:0, p
 /* com o personagem 3D na peça, o avatar ilustrado começa desligado (dá para religar na caixa "Avatar") */
 const semDuplicar = () => { if (st.personagem !== 'nenhum') st.avatar = false; };
 
-const st = Object.assign({formato:'post', layout:'poster', tema:'escuro', notebook:'nenhum', npos:'direita', ntam:40, ny:0}, PERSONAGEM_PADRAO, BASE, EXEMPLOS.poster);
+const st = Object.assign({formato:'post', layout:'poster', tema:'escuro', notebook:'nenhum', npos:'direita', ntam:40, ny:0, cena:'cenas/quarto', ctam:100, cy:0}, PERSONAGEM_PADRAO, BASE, EXEMPLOS.poster);
 let foto = null, foto2 = null;
 
 /* ---------------------------------------------------------------- imagens SVG embutidas */
@@ -1221,7 +1249,7 @@ async function Lcena(ctx, W, H, t){
    Incluído no gerador por montar_gerador.py. A pose pode ser trocada no painel "Personagem 3D". */
 const LAYOUTS_3D = {p3d_ola:'Olá, eu sou', p3d_metodo:'Método', p3d_servicos:'Serviços 3D', p3d_dica:'Dica em balão',
   p3d_sinais:'3 sinais', p3d_chamada:'Vamos conversar'};
-const EH_3D = l => l.startsWith('p3d_') || l.startsWith('nb_');
+const EH_3D = l => l.startsWith('p3d_') || l.startsWith('nb_') || l.startsWith('qr_');
 
 const BASE_3D = {num:'', logo:true, selo:false, faixa:false, wogigante:false, avatar:false, transparente:false, op:7, pespelho:false, ptam:45, py:0};
 const EXEMPLOS_3D = {
@@ -1585,6 +1613,203 @@ async function notebookSolto(ctx, W, H){
   ctx.drawImage(im, x, H - h - pad - H*st.ny/100, w, h);
 }
 
+/* ---------------------------------------------------------------- cenário 3D: peças soltas em voxel e modelos prontos
+   Imagens: producao/quarto-voxel/renderizar_gerador.py + exportar_gerador.py. Usa os auxiliares dos layouts 3D e do notebook. */
+const OBJ_GRUPOS = {
+  cenas: {n:'Cenas montadas', itens:{
+    'quarto':'Meu quarto', 'quarto-com-boneco':'Quarto com o personagem', 'quarto-visto-de-cima':'Quarto visto de cima',
+    'mesa-do-quarto':'Minha mesa', 'escritorio':'Escritório', 'escritorio-com-boneco':'Escritório com o personagem'}},
+  quarto: {n:'Meu quarto (peças soltas)', itens:{
+    'pc-gamer':'PC gamer', 'monitor':'Monitor', 'notebook':'Notebook', 'teclado':'Teclado', 'mouse':'Mouse', 'mousepad':'Mousepad',
+    'fone':'Fone', 'tv':'TV', 'controle-tv':'Controle da TV', 'mesa-em-l':'Mesa em L', 'cadeira':'Cadeira', 'roupa':'Roupa',
+    'violao':'Violão', 'ventilador':'Ventilador', 'tapete':'Tapete', 'boneco-spock':'Boneco do Spock', 'cubo-magico':'Cubo mágico',
+    'porta-retrato':'Porta-retrato', 'letreiro-amor':'Letreiro AMOR', 'caneca-vidro':'Caneca de vidro', 'prato-turquesa':'Prato turquesa',
+    'prato-turquesa-2':'Prato turquesa 2', 'sacola':'Sacola', 'copo-aramado':'Porta-lápis aramado', 'lapis-amarelo':'Lápis amarelo',
+    'lapis-branco':'Lápis branco', 'lapis-verde':'Lápis verde', 'lapis-azul':'Lápis azul', 'lapis-vermelho':'Lápis vermelho',
+    'tesoura':'Tesoura', 'celular':'Celular', 'suporte-celular':'Suporte do celular', 'pendrive-azul':'Objeto azul', 'fita':'Fita',
+    'tampa-preta':'Tampa preta', 'lata-moeda':'Latinha', 'descanso-madeira':'Descanso de madeira', 'caixinha-foto':'Caixinha com foto',
+    'estojo-aberto':'Estojo aberto', 'estojo-preto':'Estojo preto', 'bolsinha':'Bolsinha', 'aparelho':'Aparelho', 'balde':'Balde',
+    'bota-direita':'Bota 1', 'bota-esquerda':'Bota 2', 'chinelo-direito':'Chinelo 1', 'chinelo-esquerdo':'Chinelo 2',
+    'maleta-1':'Maleta 1', 'maleta-2':'Maleta 2', 'quadro-branco':'Quadro branco', 'calha-quadro':'Calha do quadro',
+    'pincel-preto':'Pincel preto', 'pincel-vermelho':'Pincel vermelho', 'pincel-azul':'Pincel azul', 'quadro-cortica':'Quadro de cortiça',
+    'mural-1':'Papel do mural 1', 'mural-2':'Papel do mural 2', 'mural-3':'Papel do mural 3', 'mural-4':'Foto do mural 1',
+    'mural-5':'Foto do mural 2', 'mural-6':'Papel do mural 4', 'tomada':'Tomada'}},
+  escritorio: {n:'Itens de escritório', itens:{
+    'computador':'Computador da marca', 'mesa':'Mesa com gaveteiro', 'cadeira':'Cadeira azul', 'estante':'Estante',
+    'quadro-post-its':'Quadro de post-its', 'luminaria':'Luminária', 'planta':'Planta', 'caneca':'Caneca de café',
+    'porta-lapis':'Porta-lápis', 'caderno':'Caderno e caneta', 'mesa-digitalizadora':'Mesa digitalizadora',
+    'fone':'Fone de ouvido', 'celular':'Celular', 'camera':'Câmera'}},
+};
+const objUrl = id => `/static/img/voxel/${id}.webp`;
+const objNome = id => { const [g, n] = id.split('/'); return (OBJ_GRUPOS[g] && OBJ_GRUPOS[g].itens[n]) || id; };
+
+const cacheObj = new Map();
+function carregarObj(id){
+  if (!cacheObj.has(id)) cacheObj.set(id, new Promise(res => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => { cacheObj.delete(id); res(null); };
+    im.src = objUrl(id);
+  }));
+  return cacheObj.get(id);
+}
+
+/* ---------------- peças soltas por cima de qualquer layout ----------------
+   cada uma: {id, x, y (centro, fração da peça), tam (% da largura), esp (espelhada)} */
+let objetos = [], objSel = -1, objCaixas = [];
+
+async function objetosDraw(ctx, W, H){
+  const caixas = [];
+  const lista = objetos.slice();
+  for (let i = 0; i < lista.length; i++){
+    const o = lista[i], im = await carregarObj(o.id); if (!im) continue;
+    let w = W*o.tam/100, h = w*im.naturalHeight/im.naturalWidth;
+    if (h > H*1.1){ h = H*1.1; w = h*im.naturalWidth/im.naturalHeight; }
+    const x = W*o.x - w/2, y = H*o.y - h/2;
+    ctx.save();
+    if (o.esp){ ctx.translate(2*x + w, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(im, x, y, w, h);
+    ctx.restore();
+    caixas.push({o, x, y, w, h});
+  }
+  return caixas;
+}
+
+/* ---------------- modelos prontos ---------------- */
+const LAYOUTS_CENA = {qr_apresenta:'Prazer, sou eu', qr_bastidores:'Bastidores', qr_ferramentas:'Minhas ferramentas',
+  qr_planta:'Meu setup', qr_escritorio:'Fale comigo'};
+const BASE_CENA = Object.assign({}, BASE_3D, {personagem:'nenhum', notebook:'nenhum', ctam:100, cy:0});
+const EXEMPLOS_CENA = {
+  qr_apresenta:   Object.assign({}, BASE_CENA, {titulo:'Prazer, sou o\n*Washington*', sub:'E é daqui que eu crio.', rotulo:'Quem sou eu', tags:'@washingtonolila', lista:'', padrao:'grade', cena:'cenas/quarto-com-boneco'}),
+  qr_bastidores:  Object.assign({}, BASE_CENA, {titulo:'Onde as ideias\n*ganham forma*', sub:'', rotulo:'Bastidores', tags:'@washingtonolila', lista:'Identidade visual\nSistemas\nProdução visual', padrao:'pontos', cena:'cenas/mesa-do-quarto'}),
+  qr_ferramentas: Object.assign({}, BASE_CENA, {titulo:'Minhas\n*ferramentas*', sub:'', rotulo:'No meu dia a dia', tags:'@washingtonolila', lista:'Desenho\nFotografia\nProgramação\nÁudio', padrao:'grade', cena:'cenas/quarto'}),
+  qr_planta:      Object.assign({}, BASE_CENA, {titulo:'Meu *setup*', sub:'Simples, e é nele que o trabalho acontece.', rotulo:'Por dentro', tags:'@washingtonolila', lista:'', padrao:'listras-finas', cena:'cenas/quarto-visto-de-cima'}),
+  qr_escritorio:  Object.assign({}, BASE_CENA, {titulo:'Vamos tirar sua\n*ideia do papel?*', sub:'', rotulo:'Contato', tags:'@washingtonolila', lista:'Me chama no direct', padrao:'listras-finas', cena:'cenas/escritorio-com-boneco'}),
+};
+
+async function cenaNaCaixa(ctx, H, t, id, box, aBase){
+  const im = await carregarObj(id); if (!im) return;
+  encaixar(ctx, im, {x:box.x, y:box.y - H*st.cy/100, w:box.w, h:box.h}, t, aBase, st.ctam/100);
+}
+
+/* título no topo (ou à esquerda, no formato deitado) e a cena grande no resto, com etiquetas embaixo */
+async function cenaComTitulo(ctx, W, H, t){
+  const k = med(W, H), {m, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const a = areaNote(ctx, W, H, t, k, .125);
+  const itens = linhas3d(4), size = Math.min(m*.038, a.h*.065);
+  let faixa = 0;
+  if (itens.length) faixa = size*(wide ? 2.4 : 4.6);
+  await cenaNaCaixa(ctx, H, t, st.cena, {x:a.x, y:a.y, w:a.w, h:a.h - faixa}, false);
+  if (itens.length) filaEtiquetas(ctx, itens, a.x, a.y + a.h - faixa, a.w, size);
+  rodape3d(ctx, H, t, m, pad);
+}
+const Lqr_apresenta = cenaComTitulo, Lqr_bastidores = cenaComTitulo, Lqr_planta = cenaComTitulo, Lqr_escritorio = cenaComTitulo;
+
+async function Lqr_ferramentas(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const y = cabeca3d(ctx, t, s, pad, pad + 100*s, wide ? W*.7 : W - 2*pad, H*(wide ? .3 : .19), wide ? H*.15 : m*.115, m*.032) + 30*s;
+  const pecas = ['escritorio/mesa-digitalizadora', 'escritorio/camera', 'escritorio/computador', 'escritorio/fone'];
+  const nomes = linhas3d(4), cols = wide ? 4 : 2, lins = wide ? 1 : 2, gap = 24*s;
+  const cw = (W - 2*pad - gap*(cols - 1))/cols, ch = (H - pad*2.2 - y - gap*(lins - 1))/lins;
+  for (let i = 0; i < 4; i++){
+    const bx = pad + (i % cols)*(cw + gap), by = y + Math.floor(i/cols)*(ch + gap);
+    ctx.save(); chamfer(ctx, bx, by, cw, ch, 28*s); ctx.fillStyle = t.panel; ctx.fill(); ctx.restore();
+    const txt = nomes[i] || '';
+    let size = Math.min(m*.036, ch*.11);
+    if (txt && medirEtiqueta(ctx, txt, size) > cw*.92) size *= cw*.92/medirEtiqueta(ctx, txt, size);
+    const im = await carregarObj(pecas[i]);
+    if (im) encaixar(ctx, im, {x:bx + cw*.1, y:by + ch*.07, w:cw*.8, h:ch*.93 - size*2.9}, t, false, 1);
+    if (txt) etiqueta(ctx, bx + (cw - medirEtiqueta(ctx, txt, size))/2, by + ch - size*2.3, txt, size, String(i+1));
+  }
+  rodape3d(ctx, H, t, m, pad);
+}
+
+/* ---------------- painel e arraste ---------------- */
+function iniciarCenario(){
+  const todos = Object.entries(OBJ_GRUPOS).map(([g, v]) =>
+    `<optgroup label="${v.n}">${Object.entries(v.itens).map(([n, r]) => `<option value="${g}/${n}">${r}</option>`).join('')}</optgroup>`).join('');
+  $('cena').innerHTML = todos;
+  $('layoutscena').innerHTML = Object.entries(LAYOUTS_CENA).map(botaoLayout).join('');
+  $('objgrupo').innerHTML = Object.entries(OBJ_GRUPOS).map(([g, v]) => `<option value="${g}">${v.n}</option>`).join('');
+
+  const mostrarGrupo = () => {
+    const g = $('objgrupo').value;
+    $('objgrade').innerHTML = Object.entries(OBJ_GRUPOS[g].itens).map(([n, r]) =>
+      `<button type="button" data-obj="${g}/${n}" title="${r}" aria-label="Adicionar: ${r}"><img src="${objUrl(g + '/' + n)}" alt="" loading="lazy"></button>`).join('');
+  };
+  const atualizarPainel = () => {
+    $('objlista').innerHTML = objetos.length
+      ? objetos.map((o, i) => `<option value="${i}">${i + 1}. ${objNome(o.id)}</option>`).join('')
+      : '<option value="-1">Nenhuma peça na arte</option>';
+    $('objlista').value = String(objSel);
+    const o = objetos[objSel];
+    $('objajustes').hidden = !o;
+    if (o){ $('objtam').value = o.tam; $('objx').value = Math.round(o.x*100); $('objy').value = Math.round(o.y*100); }
+    $('cv').style.touchAction = objetos.length ? 'none' : '';
+    $('cv').style.cursor = objetos.length ? 'grab' : '';
+  };
+  const mudar = () => { atualizarPainel(); agendar(); };
+
+  $('objgrupo').addEventListener('input', mostrarGrupo);
+  $('objgrade').addEventListener('click', e => {
+    const b = e.target.closest('[data-obj]'); if (!b) return;
+    const n = objetos.length, cena = b.dataset.obj.startsWith('cenas/');
+    objetos.push({id:b.dataset.obj, x:cena ? .5 : .5 + ((n % 3) - 1)*.22, y:cena ? .62 : .76 - (Math.floor(n/3) % 4)*.14,
+                  tam:cena ? 80 : 26, esp:false});
+    objSel = objetos.length - 1;
+    mudar();
+  });
+  $('objlista').addEventListener('input', e => { objSel = +e.target.value; atualizarPainel(); });
+  for (const [id, chave, escala] of [['objtam', 'tam', 1], ['objx', 'x', .01], ['objy', 'y', .01]])
+    $(id).addEventListener('input', e => { if (objetos[objSel]){ objetos[objSel][chave] = +e.target.value*escala; agendar(); } });
+  $('objespelhar').addEventListener('click', () => { if (objetos[objSel]){ objetos[objSel].esp = !objetos[objSel].esp; agendar(); } });
+  $('objfrente').addEventListener('click', () => {
+    if (!objetos[objSel]) return;
+    objetos.push(...objetos.splice(objSel, 1)); objSel = objetos.length - 1; mudar();
+  });
+  $('objtras').addEventListener('click', () => {
+    if (!objetos[objSel]) return;
+    objetos.unshift(...objetos.splice(objSel, 1)); objSel = 0; mudar();
+  });
+  $('objremover').addEventListener('click', () => {
+    if (!objetos[objSel]) return;
+    objetos.splice(objSel, 1); objSel = objetos.length - 1; mudar();
+  });
+  $('objlimpar').addEventListener('click', () => { objetos = []; objSel = -1; mudar(); });
+
+  /* arrastar as peças direto na prévia */
+  const cv = $('cv');
+  const ponto = e => { const r = cv.getBoundingClientRect(); return {x:(e.clientX - r.left)*cv.width/r.width, y:(e.clientY - r.top)*cv.height/r.height}; };
+  let arrasto = null;
+  cv.addEventListener('pointerdown', e => {
+    const p = ponto(e);
+    for (let i = objCaixas.length - 1; i >= 0; i--){
+      const c = objCaixas[i];
+      if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h){
+        objSel = objetos.indexOf(c.o); if (objSel < 0) continue;
+        arrasto = {o:c.o, dx:p.x/cv.width - c.o.x, dy:p.y/cv.height - c.o.y};
+        cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; e.preventDefault(); atualizarPainel();
+        return;
+      }
+    }
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!arrasto) return;
+    const p = ponto(e), limita = v => Math.min(1.1, Math.max(-.1, v));
+    arrasto.o.x = limita(p.x/cv.width - arrasto.dx); arrasto.o.y = limita(p.y/cv.height - arrasto.dy);
+    $('objx').value = Math.round(arrasto.o.x*100); $('objy').value = Math.round(arrasto.o.y*100);
+    agendar();
+  });
+  const soltar = () => { if (arrasto){ arrasto = null; cv.style.cursor = 'grab'; } };
+  cv.addEventListener('pointerup', soltar);
+  cv.addEventListener('pointercancel', soltar);
+
+  mostrarGrupo();
+  atualizarPainel();
+}
+
 const LAYOUTS = {poster:Lposter, tipografico:Ltipografico, citacao:Lcitacao, projeto:Lprojeto,
   carrossel:Lcarrossel, servicos:Lservicos, antesdepois:Lantesdepois, destaque:Ldestaque, cartao:Lcartao, verso:Lverso,
   processo:Lprocesso, checklist:Lchecklist, depoimento:Ldepoimento, evento:Levento, comparacao:Lcomparacao,
@@ -1592,9 +1817,10 @@ const LAYOUTS = {poster:Lposter, tipografico:Ltipografico, citacao:Lcitacao, pro
   certificado:Lcertificado, ebook:Lebook, cracha:Lcracha, videocapa:Lvideocapa, lowerthird:Llowerthird, legenda:Llegenda,
   abertura:Labertura, telafinal:Ltelafinal, cena:Lcena,
   p3d_ola:Lp3d_ola, p3d_metodo:Lp3d_metodo, p3d_servicos:Lp3d_servicos, p3d_dica:Lp3d_dica, p3d_sinais:Lp3d_sinais, p3d_chamada:Lp3d_chamada,
-  nb_sistema:Lnb_sistema, nb_codigo:Lnb_codigo, nb_tela:Lnb_tela, nb_comparar:Lnb_comparar, nb_frentes:Lnb_frentes, nb_juntos:Lnb_juntos};
-Object.assign(LAYOUTS_NOMES, LAYOUTS_3D, LAYOUTS_NOTE);
-Object.assign(EXEMPLOS, EXEMPLOS_3D, EXEMPLOS_NOTE);
+  nb_sistema:Lnb_sistema, nb_codigo:Lnb_codigo, nb_tela:Lnb_tela, nb_comparar:Lnb_comparar, nb_frentes:Lnb_frentes, nb_juntos:Lnb_juntos,
+  qr_apresenta:Lqr_apresenta, qr_bastidores:Lqr_bastidores, qr_ferramentas:Lqr_ferramentas, qr_planta:Lqr_planta, qr_escritorio:Lqr_escritorio};
+Object.assign(LAYOUTS_NOMES, LAYOUTS_3D, LAYOUTS_NOTE, LAYOUTS_CENA);
+Object.assign(EXEMPLOS, EXEMPLOS_3D, EXEMPLOS_NOTE, EXEMPLOS_CENA);
 
 /* ---------------------------------------------------------------- personagem 3D */
 const cachePoses = new Map();
@@ -1635,7 +1861,10 @@ async function render(){
   if (!st.transparente){ ctx.fillStyle = t.bg; ctx.fillRect(0, 0, f.w, f.h); }
   try { await LAYOUTS[st.layout](ctx, f.w, f.h, t); } catch (e){ console.error(e); }
   try { await personagemDraw(ctx, f.w, f.h); await notebookSolto(ctx, f.w, f.h); } catch (e){ console.error(e); }
+  let caixas = [];
+  try { caixas = await objetosDraw(ctx, f.w, f.h); } catch (e){ console.error(e); }
   if (my !== tok) return;
+  objCaixas = caixas;
   cv.width = f.w; cv.height = f.h; cv.getContext('2d').drawImage(off, 0, 0);
   document.getElementById('info').textContent = `${f.n} · ${LAYOUTS_NOMES[st.layout]} · ${t.n}`;
 }
@@ -1676,7 +1905,7 @@ function sincronizar(){
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   });
   document.querySelectorAll('#notes button').forEach(b => b.classList.toggle('ativo', b.dataset.note === st.notebook));
-  document.querySelectorAll('#layouts .tag, #layouts3d .tag, #layoutsnote .tag').forEach(b => b.classList.toggle('ativo', b.dataset.l === st.layout));
+  document.querySelectorAll('#layouts .tag, #layouts3d .tag, #layoutsnote .tag, #layoutscena .tag').forEach(b => b.classList.toggle('ativo', b.dataset.l === st.layout));
   document.querySelectorAll('#temas button').forEach(b => b.classList.toggle('ativo', b.dataset.t === st.tema));
 }
 document.addEventListener('input', e => {
@@ -1701,6 +1930,8 @@ function escolherLayout(e){
 $('layouts').addEventListener('click', escolherLayout);
 $('layouts3d').addEventListener('click', escolherLayout);
 $('layoutsnote').addEventListener('click', escolherLayout);
+iniciarCenario();
+$('layoutscena').addEventListener('click', escolherLayout);
 $('temas').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
   st.tema = b.dataset.t; sincronizar(); agendar();
