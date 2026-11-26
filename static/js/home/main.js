@@ -10,6 +10,7 @@
 import { Cena } from './cena.js';
 import { montarTodasAsCartas } from './cartas.js';
 import { iniciarFilme } from './filme.js';
+import { iniciarPersonagem } from './personagem.js';
 import { criarPalcos } from './palco.js';
 import { iniciarProjetos } from './projetos.js';
 
@@ -19,4 +20,5 @@ const palcos = criarPalcos({esf: cena.seqs.esfera, cab: cena.seqs.cabeca, dna: c
 iniciarProjetos(cena.alvos);        // a grade muda a altura da página: recalcula o scroll ao filtrar
 montarTodasAsCartas(palcos);
 iniciarFilme();
+iniciarPersonagem();
 cena.iniciar(palcos);

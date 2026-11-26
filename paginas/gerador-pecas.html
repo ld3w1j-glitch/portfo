@@ -26,6 +26,10 @@ label.campo{display:block;margin-bottom:10px;font-family:var(--f-mono);font-size
 .temas button{height:44px;border:2px solid transparent;cursor:pointer;font:700 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
 .temas button.ativo{border-color:var(--wo-laranja);outline:2px solid var(--wo-offwhite);outline-offset:1px}
 .layouts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.poses{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:0 0 12px}
+.poses button{height:70px;padding:3px;cursor:pointer;background:var(--wo-grafite-3);border:2px solid transparent}
+.poses button.ativo{border-color:var(--wo-laranja)}
+.poses img{width:100%;height:100%;object-fit:contain;display:block}
 .layouts .tag{padding:10px;text-align:center}
 .acoes{position:sticky;bottom:-40px;background:var(--wo-grafite);padding:16px 0 40px;margin-top:20px;display:grid;gap:10px;z-index:2}
 .palco{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;background:
@@ -77,6 +81,16 @@ canvas{max-width:100%;max-height:calc(100vh - 80px);box-shadow:0 20px 60px rgba(
         <label><input type="checkbox" data-k="selo">Selo WO Digital</label>
         <label><input type="checkbox" data-k="transparente">Fundo transparente</label>
       </div>
+    </div>
+
+    <div class="grupo"><span class="rotulo">Personagem 3D</span>
+      <label class="campo">Pose<select id="personagem" data-k="personagem"></select></label>
+      <div class="poses" id="poses"></div>
+      <label class="campo">Posição<select id="ppos" data-k="ppos"><option value="direita">Direita</option><option value="centro">Centro</option><option value="esquerda">Esquerda</option></select></label>
+      <label class="campo">Tamanho<input type="range" data-k="ptam" min="20" max="110" style="width:100%;accent-color:var(--wo-laranja)"></label>
+      <label class="campo">Subir ou descer<input type="range" data-k="py" min="-40" max="60" style="width:100%;accent-color:var(--wo-laranja)"></label>
+      <div class="opcoes"><label><input type="checkbox" data-k="pespelho">Espelhar</label></div>
+      <p class="dica">O personagem fica por cima da peça e continua ao trocar de layout. Ajuste tamanho e posição para não cobrir o texto.</p>
     </div>
 
     <div class="grupo"><span class="rotulo">Imagens (Projeto · Antes e depois)</span>
@@ -177,7 +191,16 @@ const EXEMPLOS = {
   cena:        {titulo:'Defina o *objetivo*', sub:'Aonde você quer chegar? Tudo parte daqui.', rotulo:'Etapa', num:'01', tags:'Design · Código · Imagem', padrao:'grade', op:7, wogigante:false, faixa:true, avatar:false, logo:true, selo:true},
 };
 
-const st = Object.assign({formato:'post', layout:'poster', tema:'escuro'}, BASE, EXEMPLOS.poster);
+/* personagem voxel: poses renderizadas no Blender (producao/personagem-poses) */
+const POSES = {nenhum:'Sem personagem', parado:'Parado', acenando:'Acenando', apresentando:'Apresentando', apontando:'Apontando',
+  comemorando:'Comemorando', pensando:'Pensando', entregando:'Entregando', 'tres-quartos':'Três quartos', perfil:'De lado', retrato:'Retrato (busto)'};
+const poseUrl = p => `/static/img/personagem/${p}.webp`;
+/* fora de BASE de propósito: trocar de layout não apaga o personagem escolhido */
+const PERSONAGEM_PADRAO = {personagem:'nenhum', ppos:'direita', ptam:45, py:0, pespelho:false};
+/* com o personagem 3D na peça, o avatar ilustrado começa desligado (dá para religar na caixa "Avatar") */
+const semDuplicar = () => { if (st.personagem !== 'nenhum') st.avatar = false; };
+
+const st = Object.assign({formato:'post', layout:'poster', tema:'escuro'}, PERSONAGEM_PADRAO, BASE, EXEMPLOS.poster);
 let foto = null, foto2 = null;
 
 /* ---------------------------------------------------------------- imagens SVG embutidas */
@@ -1184,6 +1207,35 @@ const LAYOUTS = {poster:Lposter, tipografico:Ltipografico, citacao:Lcitacao, pro
   certificado:Lcertificado, ebook:Lebook, cracha:Lcracha, videocapa:Lvideocapa, lowerthird:Llowerthird, legenda:Llegenda,
   abertura:Labertura, telafinal:Ltelafinal, cena:Lcena};
 
+/* ---------------------------------------------------------------- personagem 3D */
+const cachePoses = new Map();
+function carregarPose(p){
+  if (!cachePoses.has(p)) cachePoses.set(p, new Promise(res => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => { cachePoses.delete(p); res(null); };
+    im.src = poseUrl(p);
+  }));
+  return cachePoses.get(p);
+}
+async function personagemDraw(ctx, W, H){
+  if (st.personagem === 'nenhum') return;
+  const im = await carregarPose(st.personagem); if (!im) return;
+  const busto = st.personagem === 'retrato', pad = Math.round(Math.min(W, H)*.03);
+  let h = H*st.ptam/100, w = h*im.naturalWidth/im.naturalHeight;
+  if (w > W*1.1){ w = W*1.1; h = w*im.naturalHeight/im.naturalWidth; }
+  const x = st.ppos === 'esquerda' ? pad : st.ppos === 'centro' ? (W - w)/2 : W - w - pad;
+  const y = H - h - (busto ? 0 : pad) - H*st.py/100;
+  if (!busto && !st.transparente){                       // sombra de contato sob os pés
+    ctx.save(); ctx.globalAlpha = .28; ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(x + w/2, y + h*.985, w*.34, h*.022, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  }
+  ctx.save();
+  if (st.pespelho){ ctx.translate(2*x + w, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(im, x, y, w, h);
+  ctx.restore();
+}
+
 /* ---------------------------------------------------------------- render */
 const cv = document.getElementById('cv');
 let tok = 0, pendente = false;
@@ -1193,6 +1245,7 @@ async function render(){
   const ctx = off.getContext('2d');
   if (!st.transparente){ ctx.fillStyle = t.bg; ctx.fillRect(0, 0, f.w, f.h); }
   try { await LAYOUTS[st.layout](ctx, f.w, f.h, t); } catch (e){ console.error(e); }
+  try { await personagemDraw(ctx, f.w, f.h); } catch (e){ console.error(e); }
   if (my !== tok) return;
   cv.width = f.w; cv.height = f.h; cv.getContext('2d').drawImage(off, 0, 0);
   document.getElementById('info').textContent = `${f.n} · ${LAYOUTS_NOMES[st.layout]} · ${t.n}`;
@@ -1206,8 +1259,18 @@ $('padrao').innerHTML = Object.entries(PADROES).map(([k,v]) => `<option value="$
 $('layouts').innerHTML = Object.entries(LAYOUTS_NOMES).map(([k,v]) => `<button class="tag" data-l="${k}">${v}</button>`).join('');
 $('temas').innerHTML = Object.entries(TEMAS).map(([k,v]) => `<button data-t="${k}" style="background:${v.bg};color:${v.fg}">${v.n}</button>`).join('');
 
+$('personagem').innerHTML = Object.entries(POSES).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+$('poses').innerHTML = Object.keys(POSES).filter(k => k !== 'nenhum').map(k =>
+  `<button type="button" data-pose="${k}" title="${POSES[k]}" aria-label="Pose: ${POSES[k]}"><img src="${poseUrl(k)}" alt="" loading="lazy"></button>`).join('');
+$('poses').addEventListener('click', e => {
+  const b = e.target.closest('[data-pose]'); if (!b) return;
+  st.personagem = st.personagem === b.dataset.pose ? 'nenhum' : b.dataset.pose;      // clicar de novo remove
+  semDuplicar(); sincronizar(); agendar();
+});
+
 function sincronizar(){
   $('formato').value = st.formato;
+  document.querySelectorAll('#poses button').forEach(b => b.classList.toggle('ativo', b.dataset.pose === st.personagem));
   document.querySelectorAll('[data-k]').forEach(el => {
     const v = st[el.dataset.k];
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
@@ -1220,6 +1283,7 @@ document.addEventListener('input', e => {
   if (el.id === 'formato'){ st.formato = el.value; agendar(); return; }
   if (!el.dataset.k) return;
   st[el.dataset.k] = el.type === 'checkbox' ? el.checked : (el.type === 'range' ? +el.value : el.value);
+  if (el.dataset.k === 'personagem'){ semDuplicar(); sincronizar(); }
   agendar();
 });
 $('layouts').addEventListener('click', e => {
@@ -1227,13 +1291,14 @@ $('layouts').addEventListener('click', e => {
   const antigo = st.layout; st.layout = b.dataset.l; Object.assign(st, BASE, EXEMPLOS[st.layout]);
   if (FORMATO_PADRAO[st.layout]) st.formato = FORMATO_PADRAO[st.layout];
   else if (FORMATO_PADRAO[antigo] && st.formato === FORMATO_PADRAO[antigo]) st.formato = 'post';
+  semDuplicar();
   sincronizar(); agendar();
 });
 $('temas').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
   st.tema = b.dataset.t; sincronizar(); agendar();
 });
-$('exemplo').addEventListener('click', () => { Object.assign(st, BASE, EXEMPLOS[st.layout]); sincronizar(); agendar(); });
+$('exemplo').addEventListener('click', () => { Object.assign(st, BASE, EXEMPLOS[st.layout]); semDuplicar(); sincronizar(); agendar(); });
 function lerImagem(inputId, destino){
   $(inputId).addEventListener('change', e => {
     const f = e.target.files[0]; if (!f){ destino(null); agendar(); return; }
@@ -1271,6 +1336,8 @@ $('baixarhtml').addEventListener('click', () => {
     if (FORMATO_PADRAO[st.layout]) st.formato = FORMATO_PADRAO[st.layout];
   }
   if (h.get('tema') && TEMAS[h.get('tema')]) st.tema = h.get('tema');
+  if (h.get('personagem') && POSES[h.get('personagem')]) st.personagem = h.get('personagem');
+  semDuplicar();
   if (h.get('formato') && FORMATOS[h.get('formato')]) st.formato = h.get('formato');
   sincronizar();
   try {

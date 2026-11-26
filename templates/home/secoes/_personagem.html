@@ -1,0 +1,26 @@
+  <section class="bloco personagem3d" id="personagem3d" aria-labelledby="p3dTitulo">
+    <div class="wrap">
+      <div class="sec-head"><span class="rotulo">Personagem 3D · voxel</span></div>
+      <div class="p3d">
+        <div class="p3d-texto">
+          <h2 class="display h-lg" id="p3dTitulo">O mesmo traço, <span class="laranja">agora em 3D</span></h2>
+          <p class="p3d-desc" id="p3dDesc" aria-live="polite">Do objetivo à entrega: o método que guia cada projeto. Arraste o personagem para girar.</p>
+          <div class="p3d-abas" role="group" aria-label="Escolha o assunto">
+            <button type="button" class="tag ativo" data-modo="metodo" aria-pressed="true">Método</button>
+            <button type="button" class="tag" data-modo="design" aria-pressed="false">Design</button>
+            <button type="button" class="tag" data-modo="codigo" aria-pressed="false">Código</button>
+            <button type="button" class="tag" data-modo="imagem" aria-pressed="false">Imagem</button>
+          </div>
+        </div>
+        <div class="p3d-palco" id="p3dPalco" data-base="{{ url_for('static', filename='img/personagem/') }}">
+          <div class="p3d-boneco" id="p3dBoneco" tabindex="0" role="img"
+               aria-label="Personagem 3D de Washington Oliveira. Use as setas para a esquerda e a direita para girar.">
+            <img id="p3dImg" src="{{ url_for('static', filename='img/personagem/giro/g00.webp') }}" alt="" draggable="false">
+          </div>
+          <span class="p3d-chao" aria-hidden="true"></span>
+          <ul class="p3d-etiquetas" id="p3dEtiquetas" aria-label="Etiquetas"></ul>
+          <span class="p3d-dica rotulo" id="p3dDica" aria-hidden="true">↔ arraste para girar</span>
+        </div>
+      </div>
+    </div>
+  </section>
