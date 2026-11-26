@@ -26,6 +26,8 @@ label.campo{display:block;margin-bottom:10px;font-family:var(--f-mono);font-size
 .temas button{height:44px;border:2px solid transparent;cursor:pointer;font:700 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
 .temas button.ativo{border-color:var(--wo-laranja);outline:2px solid var(--wo-offwhite);outline-offset:1px}
 .layouts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.destaque3d{border:1px solid var(--wo-laranja);padding:12px}
+.destaque3d>.rotulo{color:var(--wo-laranja)}
 .poses{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:0 0 12px}
 .poses button{height:70px;padding:3px;cursor:pointer;background:var(--wo-grafite-3);border:2px solid transparent}
 .poses button.ativo{border-color:var(--wo-laranja)}
@@ -49,6 +51,9 @@ canvas{max-width:100%;max-height:calc(100vh - 80px);box-shadow:0 20px 60px rgba(
 
     <div class="grupo"><span class="rotulo">Formato</span>
       <select id="formato"></select></div>
+
+    <div class="grupo destaque3d"><span class="rotulo">Novo · Modelos com o personagem 3D</span>
+      <div class="layouts" id="layouts3d"></div></div>
 
     <div class="grupo"><span class="rotulo">Layout</span>
       <div class="layouts" id="layouts"></div></div>
@@ -1200,12 +1205,217 @@ async function Lcena(ctx, W, H, t){
   rodape(ctx, W, H, t, m, pad); await rodapeSelo(ctx, W, H, t, s, pad);
 }
 
+/* ---------------------------------------------------------------- modelos prontos com o personagem 3D
+   Cada modelo reserva um lugar para o texto e outro para o boneco, então um não cobre o outro.
+   Incluído no gerador por montar_gerador.py. A pose pode ser trocada no painel "Personagem 3D". */
+const LAYOUTS_3D = {p3d_ola:'Olá, eu sou', p3d_metodo:'Método', p3d_servicos:'Serviços 3D', p3d_dica:'Dica em balão',
+  p3d_sinais:'3 sinais', p3d_chamada:'Vamos conversar'};
+const EH_3D = l => l.startsWith('p3d_');
+
+const BASE_3D = {num:'', logo:true, selo:false, faixa:false, wogigante:false, avatar:false, transparente:false, op:7, pespelho:false, ptam:45, py:0};
+const EXEMPLOS_3D = {
+  p3d_ola:      Object.assign({}, BASE_3D, {titulo:'Olá, eu sou o\n*Washington*', sub:'Design, sistemas e produção visual.', rotulo:'Quem sou eu', tags:'@washingtonolila', lista:'', padrao:'grade', personagem:'acenando'}),
+  p3d_metodo:   Object.assign({}, BASE_3D, {titulo:'Do plano\nà *entrega*', sub:'Quatro etapas em todo projeto.', rotulo:'Meu método', tags:'@washingtonolila', lista:'Objetivo\nPlano\nExecução\nEntrega', padrao:'grade', personagem:'parado'}),
+  p3d_servicos: Object.assign({}, BASE_3D, {titulo:'O que eu *faço*', sub:'', rotulo:'Serviços', tags:'@washingtonolila', lista:'Identidade visual: Logo, cores e tipografia\nSistemas: Processos sob medida\nProdução visual: Peças e vídeos', padrao:'pontos', personagem:'apontando'}),
+  p3d_dica:     Object.assign({}, BASE_3D, {titulo:'Menos *cores*,\nmais identidade', sub:'Poucas cores bem usadas deixam a marca fácil de reconhecer.', rotulo:'Dica rápida', tags:'@washingtonolila', lista:'', padrao:'listras-finas', personagem:'apresentando'}),
+  p3d_sinais:   Object.assign({}, BASE_3D, {titulo:'Sua marca precisa de *organização?*', sub:'', rotulo:'3 sinais', tags:'Comente 1, 2 ou 3', lista:'Várias logos\nCada hora um estilo\nTudo do zero', padrao:'pontos', personagem:'pensando'}),
+  p3d_chamada:  Object.assign({}, BASE_3D, {titulo:'Vamos\n*conversar?*', sub:'Me conta sua ideia.', rotulo:'Contato', tags:'@washingtonolila', lista:'Me chama no direct', padrao:'listras-finas', personagem:'retrato'}),
+};
+
+/* medidas comuns */
+function med(W, H){
+  const m = Math.min(W,H), s = m/1080, pad = Math.round(m*.065), wide = W/H > 1.35, alto = H/W > 1.5;
+  return {m, s, pad, wide, alto};
+}
+
+/* desenha o boneco inteiro dentro de uma caixa, apoiado no chão dela. 'aDireita' encosta na borda direita da caixa */
+async function boneco(ctx, W, H, t, box, aDireita){
+  if (st.personagem === 'nenhum') return;
+  const im = await carregarPose(st.personagem); if (!im) return;
+  const busto = st.personagem === 'retrato', zoom = st.ptam/45;
+  let h = box.h, w = h*im.naturalWidth/im.naturalHeight;
+  if (w > box.w){ w = box.w; h = w*im.naturalHeight/im.naturalWidth; }
+  w *= zoom; h *= zoom;
+  const x = aDireita ? box.x + box.w - w : box.x + (box.w - w)/2;
+  const y = box.y + box.h - h - H*st.py/100;
+  if (!busto && !st.transparente){
+    ctx.save(); ctx.globalAlpha = .3; ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(x + w/2, y + h*.985, w*.34, h*.022, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  }
+  ctx.save();
+  if (st.pespelho){ ctx.translate(2*x + w, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(im, x, y, w, h);
+  ctx.restore();
+}
+
+/* etiqueta no estilo do Reels: cantos chanfrados e um marcador (ponto, número ou ✓) */
+function medirEtiqueta(ctx, txt, size){
+  ctx.font = fontD(size);
+  return ctx.measureText(String(txt).toUpperCase()).width + size*2.05;
+}
+function etiqueta(ctx, x, y, txt, size, marca, fundo='#F5F5EF', cor='#1A1A1A', corMarca='#365CE6'){
+  const w = medirEtiqueta(ctx, txt, size), h = size*1.72;
+  ctx.save(); chamfer(ctx, x, y + size*.14, w, h, size*.34); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill();
+  chamfer(ctx, x, y, w, h, size*.34); ctx.fillStyle = fundo; ctx.fill();
+  ctx.fillStyle = corMarca; ctx.beginPath(); ctx.arc(x + size*.84, y + h/2, marca ? size*.48 : size*.22, 0, Math.PI*2); ctx.fill();
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  if (marca){ ctx.fillStyle = '#F5F5EF'; ctx.font = fontD(size*.68); ctx.fillText(marca, x + size*.84, y + h/2 + size*.03); }
+  ctx.textAlign = 'left'; ctx.font = fontD(size); ctx.fillStyle = cor; ctx.fillText(String(txt).toUpperCase(), x + size*1.5, y + h/2 + size*.05);
+  ctx.restore();
+  return {w, h};
+}
+
+/* título + subtítulo a partir de (x, y); devolve o y logo abaixo */
+function cabeca3d(ctx, t, s, x, y, maxW, maxH, maxTitle, subS){
+  ctx.fillStyle = t.bar; ctx.fillRect(x, y, 64*s, 9*s); y += 34*s;
+  const ti = fitRuns(ctx, st.titulo, maxW, maxH, maxTitle, 22, .92);
+  drawRuns(ctx, ti.lay, x, y, ti.s, .92, ti.font, true, t.fg, t.ac); y += ti.h;
+  if (st.sub){
+    y += 22*s;
+    const sl = wrapRuns(ctx, parseRuns(st.sub), maxW, fontT(subS), false);
+    drawRuns(ctx, sl, x, y, subS, 1.4, fontT(subS), false, t.mut, t.ac); y += sl.lines.length*subS*1.4;
+  }
+  return y;
+}
+const linhas3d = max => String(st.lista || '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, max);
+function rodape3d(ctx, H, t, m, pad){
+  if (!st.tags) return;
+  const sz = Math.max(13, m*.021);
+  monoText(ctx, st.tags, pad, H - pad - sz*.8, sz, t.fg, 'left', .9, .18);
+}
+async function inicio3d(ctx, W, H, t, k){
+  await padrao(ctx, W, H, t);
+  await wog(ctx, W, H, t, k.wide, k.pad, .06);
+  await topo(ctx, W, H, t, k.m, k.s, k.pad);
+}
+
+async function Lp3d_ola(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  if (wide){
+    cabeca3d(ctx, t, s, pad, H*.27, W*.52, H*.46, H*.2, m*.04);
+    await boneco(ctx, W, H, t, {x:W*.55, y:H*.14, w:W*.4, h:H*.8});
+  } else {
+    const y = cabeca3d(ctx, t, s, pad, pad + 100*s, W - 2*pad, H*.25, m*.16, m*.036);
+    ctx.fillStyle = t.panel; chamfer(ctx, pad, H*.82, W - 2*pad, H*.1, 30*s); ctx.fill();
+    await boneco(ctx, W, H, t, {x:pad, y:y + 20*s, w:W - 2*pad, h:H*.885 - y - 20*s});
+  }
+  rodape3d(ctx, H, t, m, pad);
+}
+
+async function Lp3d_metodo(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  let area;
+  if (wide){
+    cabeca3d(ctx, t, s, pad, H*.3, W*.36, H*.4, H*.17, m*.036);
+    area = {x:W*.42, y:H*.16, w:W*.55, h:H*.77};
+  } else {
+    const y = cabeca3d(ctx, t, s, pad, pad + 100*s, W - 2*pad, H*.2, m*.14, m*.034);
+    area = {x:pad*.5, y:y + 30*s, w:W - pad, h:H - pad*2 - y - 30*s};
+  }
+  await boneco(ctx, W, H, t, {x:area.x + area.w*.26, y:area.y, w:area.w*.48, h:area.h});
+  const itens = linhas3d(4);
+  let size = Math.min(m*.044, area.h*.07);
+  const maior = Math.max(1, ...itens.map(i => medirEtiqueta(ctx, i, size)));
+  if (maior > area.w*.34) size *= area.w*.34/maior;
+  const pos = [[0, .12], [1, .26], [0, .55], [1, .69]];
+  itens.forEach((it, i) => {
+    const [lado, alt] = pos[i], w = medirEtiqueta(ctx, it, size);
+    etiqueta(ctx, lado ? area.x + area.w - w - pad*.2 : area.x + pad*.2, area.y + area.h*alt, it, size, String(i+1));
+  });
+  rodape3d(ctx, H, t, m, pad);
+}
+
+async function Lp3d_servicos(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const y = cabeca3d(ctx, t, s, pad, pad + 100*s, wide ? W*.6 : W - 2*pad, H*(wide ? .24 : .15), wide ? H*.16 : m*.12, m*.032) + 44*s;
+  const itens = linhas3d(3).map(l => { const i = l.indexOf(':'); return i < 0 ? {n:l, d:''} : {n:l.slice(0,i).trim(), d:l.slice(i+1).trim()}; });
+  const cw = wide ? W*.52 : W*.58, gap = 22*s, ch = Math.min((H - pad*2.1 - y - gap*2)/3, wide ? H*.19 : H*.17);
+  const sobra = (H - pad*2.1 - y) - (ch*3 + gap*2);
+  itens.forEach((it, i) => {
+    const cy = y + Math.max(0, sobra)/2 + i*(ch + gap);
+    ctx.save(); chamfer(ctx, pad, cy, cw, ch, 26*s); ctx.fillStyle = t.panel; ctx.fill(); ctx.restore();
+    ctx.fillStyle = t.bar; ctx.fillRect(pad, cy + 26*s, 10*s, ch - 52*s);
+    const tx = pad + 38*s, tw = cw - 62*s;
+    const nm = fitRuns(ctx, it.n, tw, ch*.5, Math.min(ch*.34, m*.062), 18, .95);
+    const dS = Math.max(13, Math.min(m*.027, ch*.15));
+    const dl = wrapRuns(ctx, parseRuns(it.d), tw, fontT(dS), false);
+    const total = nm.h + (it.d ? 10*s + dl.lines.length*dS*1.35 : 0), ty = cy + (ch - total)/2;
+    drawRuns(ctx, nm.lay, tx, ty, nm.s, .95, nm.font, true, t.fg, t.ac);
+    if (it.d) drawRuns(ctx, dl, tx, ty + nm.h + 10*s, dS, 1.35, fontT(dS), false, t.mut, t.ac);
+  });
+  const bx = pad + cw + 8*s;
+  await boneco(ctx, W, H, t, {x:bx, y:y, w:W - bx - pad*.35, h:H - y - pad*1.5}, true);
+  rodape3d(ctx, H, t, m, pad);
+}
+
+async function Lp3d_dica(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const bx = pad, by = pad + 100*s, bw = wide ? W*.55 : W - 2*pad, bh = wide ? H - by - pad*2 : H*(k.alto ? .38 : .42);
+  const cauda = 52*s;
+  ctx.save(); ctx.fillStyle = t.panel; chamfer(ctx, bx, by, bw, bh, 46*s); ctx.fill();
+  ctx.beginPath();                                                   // ponta do balão, virada para o boneco
+  if (wide){ ctx.moveTo(bx + bw - 1, by + bh*.5); ctx.lineTo(bx + bw + cauda, by + bh*.62); ctx.lineTo(bx + bw - 1, by + bh*.68); }
+  else { ctx.moveTo(bx + bw*.52, by + bh - 1); ctx.lineTo(bx + bw*.66, by + bh + cauda); ctx.lineTo(bx + bw*.68, by + bh - 1); }
+  ctx.fill(); ctx.restore();
+  const in_ = 58*s, subS = Math.max(16, m*.035);
+  const medida = wrapRuns(ctx, parseRuns(st.sub), bw - 2*in_, fontT(subS), false);
+  const subH = st.sub ? medida.lines.length*subS*1.4 + 22*s : 0;
+  const maxH = bh - 2*in_ - 34*s - subH;
+  const ti = fitRuns(ctx, st.titulo, bw - 2*in_, maxH, wide ? H*.19 : m*.13, 22, .92);
+  cabeca3d(ctx, t, s, bx + in_, by + (bh - (34*s + ti.h + subH))/2, bw - 2*in_, maxH, wide ? H*.19 : m*.13, subS);
+  if (wide) await boneco(ctx, W, H, t, {x:bx + bw + cauda, y:H*.22, w:W - bx - bw - cauda - pad*.5, h:H*.72});
+  else await boneco(ctx, W, H, t, {x:W*.3, y:by + bh + cauda*.6, w:W*.7 - pad*.5, h:H - pad*.9 - (by + bh + cauda*.6)}, true);
+  rodape3d(ctx, H, t, m, pad);
+}
+
+async function Lp3d_sinais(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const y = cabeca3d(ctx, t, s, pad, pad + 100*s, wide ? W*.62 : W - 2*pad, H*(wide ? .34 : .24), wide ? H*.16 : m*.11, m*.032) + 50*s;
+  const itens = linhas3d(3), colW = wide ? W*.55 : W*.62, fim = H - pad*2.2;
+  let size = Math.min(m*.05, (fim - y)/8);
+  const maior = Math.max(1, ...itens.map(i => medirEtiqueta(ctx, i, size)));
+  if (maior > colW) size *= colW/maior;
+  const passo = Math.min(size*3.1, (fim - y)/Math.max(1, itens.length));
+  itens.forEach((it, i) => etiqueta(ctx, pad, y + (fim - y - passo*itens.length)/2 + i*passo, it, size, String(i+1), '#F5F5EF', '#1A1A1A', '#F16A32'));
+  const bx = pad + (wide ? W*.57 : W*.6);
+  await boneco(ctx, W, H, t, {x:bx, y:wide ? H*.2 : y, w:W - bx - pad*.3, h:H - (wide ? H*.2 : y) - pad*1.4}, true);
+  if (st.tags){
+    const tg = Math.max(18, m*.036);
+    etiqueta(ctx, pad, H - pad - tg*1.7, st.tags, tg, '✓', '#365CE6', '#F5F5EF', '#1A1A1A');
+  }
+}
+
+async function Lp3d_chamada(ctx, W, H, t){
+  const k = med(W, H), {m, s, pad, wide} = k;
+  await inicio3d(ctx, W, H, t, k);
+  const y = cabeca3d(ctx, t, s, pad, wide ? H*.2 : pad + 100*s, wide ? W*.52 : W - 2*pad, H*(wide ? .4 : .26), wide ? H*.2 : m*.17, m*.036);
+  const busto = st.personagem === 'retrato';
+  if (wide) await boneco(ctx, W, H, t, {x:W*.56, y:H*.18, w:W*.44, h:busto ? H*.82 : H*.76}, busto);
+  else await boneco(ctx, W, H, t, {x:W*.42, y:y + 30*s, w:W*.58, h:H - y - 30*s - (busto ? 0 : pad)}, busto);
+  const cw = wide ? W*.38 : W*.5, ch = Math.min(wide ? H*.26 : H*.2, 300*s), cy = wide ? H - pad - ch : H - pad - ch;
+  ctx.save(); chamfer(ctx, pad, cy, cw, ch, 30*s); ctx.fillStyle = '#F5F5EF'; ctx.fill(); ctx.restore();
+  const nome = fitRuns(ctx, st.tags, cw - 56*s, ch*.34, m*.06, 16, 1);
+  drawRuns(ctx, nome.lay, pad + 28*s, cy + ch*.14, nome.s, 1, nome.font, true, '#1A1A1A', '#F16A32');
+  ctx.fillStyle = '#1A1A1A'; ctx.fillRect(pad + 28*s, cy + ch*.56, cw - 56*s, ch*.31);
+  const acao = fitRuns(ctx, linhas3d(1)[0] || '', cw - 90*s, ch*.2, ch*.19, 12, 1);
+  ctx.save(); ctx.font = acao.font; const aw = ctx.measureText((linhas3d(1)[0] || '').toUpperCase()).width; ctx.restore();
+  drawRuns(ctx, acao.lay, pad + 28*s + Math.max(0, (cw - 56*s - aw)/2), cy + ch*.56 + (ch*.31 - acao.s)/2, acao.s, 1, acao.font, true, '#F5F5EF', '#F16A32');
+}
+
 const LAYOUTS = {poster:Lposter, tipografico:Ltipografico, citacao:Lcitacao, projeto:Lprojeto,
   carrossel:Lcarrossel, servicos:Lservicos, antesdepois:Lantesdepois, destaque:Ldestaque, cartao:Lcartao, verso:Lverso,
   processo:Lprocesso, checklist:Lchecklist, depoimento:Ldepoimento, evento:Levento, comparacao:Lcomparacao,
   listanum:Llistanum, pergunta:Lpergunta, dica:Ldica, oferta:Loferta, lancamento:Llancamento, agenda:Lagenda, perfil:Lperfil,
   certificado:Lcertificado, ebook:Lebook, cracha:Lcracha, videocapa:Lvideocapa, lowerthird:Llowerthird, legenda:Llegenda,
-  abertura:Labertura, telafinal:Ltelafinal, cena:Lcena};
+  abertura:Labertura, telafinal:Ltelafinal, cena:Lcena,
+  p3d_ola:Lp3d_ola, p3d_metodo:Lp3d_metodo, p3d_servicos:Lp3d_servicos, p3d_dica:Lp3d_dica, p3d_sinais:Lp3d_sinais, p3d_chamada:Lp3d_chamada};
+Object.assign(LAYOUTS_NOMES, LAYOUTS_3D);
+Object.assign(EXEMPLOS, EXEMPLOS_3D);
 
 /* ---------------------------------------------------------------- personagem 3D */
 const cachePoses = new Map();
@@ -1219,7 +1429,7 @@ function carregarPose(p){
   return cachePoses.get(p);
 }
 async function personagemDraw(ctx, W, H){
-  if (st.personagem === 'nenhum') return;
+  if (st.personagem === 'nenhum' || EH_3D(st.layout)) return;
   const im = await carregarPose(st.personagem); if (!im) return;
   const busto = st.personagem === 'retrato', pad = Math.round(Math.min(W, H)*.03);
   let h = H*st.ptam/100, w = h*im.naturalWidth/im.naturalHeight;
@@ -1256,7 +1466,9 @@ function agendar(){ if (pendente) return; pendente = true; requestAnimationFrame
 const $ = id => document.getElementById(id);
 $('formato').innerHTML = Object.entries(FORMATOS).map(([k,v]) => `<option value="${k}">${v.n}</option>`).join('');
 $('padrao').innerHTML = Object.entries(PADROES).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
-$('layouts').innerHTML = Object.entries(LAYOUTS_NOMES).map(([k,v]) => `<button class="tag" data-l="${k}">${v}</button>`).join('');
+const botaoLayout = ([k,v]) => `<button class="tag" data-l="${k}">${v}</button>`;
+$('layouts3d').innerHTML = Object.entries(LAYOUTS_3D).map(botaoLayout).join('');
+$('layouts').innerHTML = Object.entries(LAYOUTS_NOMES).filter(([k]) => !EH_3D(k)).map(([k,v]) => `<button class="tag" data-l="${k}">${v}</button>`).join('');
 $('temas').innerHTML = Object.entries(TEMAS).map(([k,v]) => `<button data-t="${k}" style="background:${v.bg};color:${v.fg}">${v.n}</button>`).join('');
 
 $('personagem').innerHTML = Object.entries(POSES).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
@@ -1275,7 +1487,7 @@ function sincronizar(){
     const v = st[el.dataset.k];
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   });
-  document.querySelectorAll('#layouts .tag').forEach(b => b.classList.toggle('ativo', b.dataset.l === st.layout));
+  document.querySelectorAll('#layouts .tag, #layouts3d .tag').forEach(b => b.classList.toggle('ativo', b.dataset.l === st.layout));
   document.querySelectorAll('#temas button').forEach(b => b.classList.toggle('ativo', b.dataset.t === st.tema));
 }
 document.addEventListener('input', e => {
@@ -1286,14 +1498,18 @@ document.addEventListener('input', e => {
   if (el.dataset.k === 'personagem'){ semDuplicar(); sincronizar(); }
   agendar();
 });
-$('layouts').addEventListener('click', e => {
+function escolherLayout(e){
   const b = e.target.closest('[data-l]'); if (!b) return;
-  const antigo = st.layout; st.layout = b.dataset.l; Object.assign(st, BASE, EXEMPLOS[st.layout]);
+  const antigo = st.layout;
+  if (EH_3D(antigo) && !EH_3D(b.dataset.l)) Object.assign(st, PERSONAGEM_PADRAO);   // o boneco do modelo não vai junto para os outros layouts
+  st.layout = b.dataset.l; Object.assign(st, BASE, EXEMPLOS[st.layout]);
   if (FORMATO_PADRAO[st.layout]) st.formato = FORMATO_PADRAO[st.layout];
   else if (FORMATO_PADRAO[antigo] && st.formato === FORMATO_PADRAO[antigo]) st.formato = 'post';
   semDuplicar();
   sincronizar(); agendar();
-});
+}
+$('layouts').addEventListener('click', escolherLayout);
+$('layouts3d').addEventListener('click', escolherLayout);
 $('temas').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
   st.tema = b.dataset.t; sincronizar(); agendar();
