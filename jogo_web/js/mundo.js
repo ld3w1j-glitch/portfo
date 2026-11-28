@@ -324,19 +324,21 @@ const anda = {ativo:false, primeira:false, x:0, y:0, z:0, nivel:0, casa:null, ru
 function prepararPersonagem(){
   let c = null; try { const s = localStorage.getItem('wo-criador-personagem'); if (s) c = validar(JSON.parse(s)); } catch (e){}
   c = c || structuredClone(PADRAO_WASHINGTON); c.lapis.usa = false;
-  const modelo = montar(c), N_ = 16;
-  const parado = posar(modelo, 'descanso').quads;
-  const ciclo = Array.from({length:N_}, (_, k) => {
-    const f = k / N_ * Math.PI * 2, s = Math.sin(f), co = Math.cos(f);
-    ANGULOS.passo = {coxa_d:[-.55 * s, 0, 0], coxa_e:[.55 * s, 0, 0], canela_d:[.75 * Math.max(0, co), 0, 0], canela_e:[.75 * Math.max(0, -co), 0, 0], braco_d:[.42 * s, 0, 0], braco_e:[-.42 * s, 0, 0], antebraco_d:[-.2, 0, 0], antebraco_e:[-.2, 0, 0]};
-    return posar(modelo, 'passo').quads;
-  });
-  const emBuffer = quads => {
-    const n = quads.length * 6, pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), cor = new Float32Array(n * 3); let o = 0;
-    for (const q of quads){ const c3 = rgb(q.cor).map(v => v / 255); for (const i of [0, 1, 2, 0, 2, 3]){ pos.set(q.v[i], o); nor.set(q.n, o); cor.set(c3, o); o += 3; } }
-    return {bp:buffer(gl.ARRAY_BUFFER, pos), bn:buffer(gl.ARRAY_BUFFER, nor), bc:buffer(gl.ARRAY_BUFFER, cor), n};
-  };
-  anda.quadros = {parado:emBuffer(parado), ciclo:ciclo.map(emBuffer)};
+  const modelo = montar(c);
+  const arma = modelo.arma, mods = modelo.mods, animador = Animacao.animador(modelo);
+  anda.quadros = {animador, arma, mods, parado:Animacao.parado(arma, mods), bp:buffer(gl.ARRAY_BUFFER, animador.pos), bn:buffer(gl.ARRAY_BUFFER, animador.nor), bc:buffer(gl.ARRAY_BUFFER, animador.cor), n:animador.total};
+  anda.mexe = 0; anda.corre = 0; anda.fase = 0; mexerPersonagem(0, false, false);
+}
+/* calcula o instante atual: passa suavemente de parado para andando e de andando para correndo */
+function mexerPersonagem(dt, andando, correndo){
+  const q = anda.quadros, puxa = (v, alvo, ritmo) => v + (alvo - v) * Math.min(1, dt * ritmo);
+  anda.mexe = puxa(anda.mexe, andando ? 1 : 0, andando ? 9 : 7); anda.corre = puxa(anda.corre, correndo ? 1 : 0, 5);
+  if (!andando && anda.mexe < .015) anda.mexe = 0;
+  let pose = q.parado;
+  if (anda.mexe > 0){ const passo = Animacao.passada(anda.fase, anda.corre, q.arma, q.mods); pose = anda.mexe > .995 ? passo : Animacao.misturar(q.parado, passo, anda.mexe); }
+  q.animador.atualizar(pose);
+  gl.bindBuffer(gl.ARRAY_BUFFER, q.bp); gl.bufferData(gl.ARRAY_BUFFER, q.animador.pos, gl.DYNAMIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, q.bn); gl.bufferData(gl.ARRAY_BUFFER, q.animador.nor, gl.DYNAMIC_DRAW);
 }
 /* põe o personagem no chão certo (terreno, degrau, piso ou escada) e ajusta a câmera ao entrar e sair de uma casa */
 function assentar(){
@@ -383,7 +385,7 @@ function quadro(agora){
   if (frente || lado){
     const t = Math.hypot(frente, lado), mx = (fx * frente + dx * lado) / t, mz = (fz * frente + dz * lado) / t, corre = teclas.has('shift');
     if (anda.ativo){
-      const vel = corre ? 7 : 2.4;
+      const vel = corre ? 5.4 : 2.1;
       /* anda em passos curtos, para não atravessar parede quando a máquina engasga */
       const partes = Math.max(1, Math.ceil(vel * dt / .12));
       for (let i = 0; i < partes; i++){
@@ -392,12 +394,16 @@ function quadro(agora){
         assentar();
       }
       const alvo = Math.atan2(mx, mz); let dif = ((alvo - anda.rumo + Math.PI * 3) % (Math.PI * 2)) - Math.PI; anda.rumo += dif * Math.min(1, dt * 12);
-      anda.fase += vel * dt / (corre ? 2.1 : 1.35) * Math.PI * 2; anda.andando = true;
+      anda.fase += vel * dt / (1.45 + (2.5 - 1.45) * anda.corre) * Math.PI * 2; anda.andando = true;
     } else {
       const vel = Math.max(12, cam.dist * .75) * (corre ? 2.4 : 1);
       cam.x = Math.max(-MEIO, Math.min(MEIO, cam.x + mx * vel * dt)); cam.z = Math.max(-MEIO, Math.min(MEIO, cam.z + mz * vel * dt));
     }
     continua = true;
+  }
+  if (anda.ativo && anda.quadros){
+    const estava = anda.mexe;
+    if (anda.andando || estava > 0){ mexerPersonagem(dt, anda.andando, anda.andando && teclas.has('shift')); if (!anda.andando){ anda.fase += dt * 6 * anda.mexe; continua = true; } }
   }
   if (anda.ativo){ assentar(); cam.x = anda.x; cam.z = anda.z; cam.y = anda.y + (anda.casa ? 1.0 : 1.35); }
   else cam.y += (Mundo.altura(cam.x, cam.z) - cam.y) * Math.min(1, dt * 8);
@@ -433,7 +439,7 @@ function desenhar(e = eixos()){
   faces += desenharPasseio(e, vistos);
   gl.uniform1f(U.zonas, 0);
   if (anda.ativo && anda.quadros && !anda.primeira){
-    const q = anda.andando ? anda.quadros.ciclo[Math.floor(anda.fase / (Math.PI * 2) * 16) % 16] : anda.quadros.parado;
+    const q = anda.quadros;
     gl.uniform3f(U.pos, anda.x, anda.y, anda.z); gl.uniform2f(U.rot, Math.cos(anda.rumo), Math.sin(anda.rumo));
     liga(q.bp, q.bn, q.bc, false); gl.drawArrays(gl.TRIANGLES, 0, q.n); gl.uniform3f(U.pos, 0, 0, 0); gl.uniform2f(U.rot, 1, 0);
   }

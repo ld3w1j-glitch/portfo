@@ -6,7 +6,7 @@ function validar(c){
   const opcao = (v, lista, atual) => Object.hasOwn(lista, v) ? v : atual;
   out.nome = typeof c.nome === 'string' ? c.nome.toLowerCase().replace(/[^a-z0-9-]+/g, '-').slice(0, 40) || out.nome : out.nome;
   for (const k of ['pele', 'olhos']) if (cor(c[k])) out[k] = c[k];
-  for (const [k, lista] of [['cabelo', CABELOS], ['barba', BARBAS], ['sobrancelha', SOBRANCELHAS], ['oculos', OCULOS], ['chapeu', CHAPEUS], ['colete', COLETES], ['mochila', MOCHILAS], ['luvas', LUVAS], ['facial', ROSTOS_EQ], ['emblema', NOMES_EMBLEMA]]){
+  for (const [k, lista] of [['cabelo', CABELOS], ['barba', BARBAS], ['sobrancelha', SOBRANCELHAS], ['oculos', OCULOS], ['chapeu', CHAPEUS], ['colete', COLETES], ['mochila', MOCHILAS], ['luvas', LUVAS], ['facial', ROSTOS_EQ], ['emblema', NOMES_EMBLEMA], ['arma', NOMES_ARMAS]]){
     out[k].estilo = opcao(c[k]?.estilo, lista, out[k].estilo);
   }
   for (const [k, atual] of Object.entries(out)){                     /* cores e caixas marcadas */
@@ -17,6 +17,7 @@ function validar(c){
       else if (typeof atual[campo] === 'boolean' && typeof v === 'boolean') atual[campo] = v;
     }
   }
+  if (typeof MODS_ARMA === 'object') for (const slot of Object.keys(SLOTS_MOD)) out.modarma[slot] = opcao(c.modarma?.[slot], MODS_ARMA[slot], 'nenhum');
   /* arquivos salvos pela primeira versão */
   if (c.chapeu?.estilo === 'capacete') out.chapeu.estilo = 'tatico';
   if (c.mochila?.usa === true) out.mochila.estilo = 'militar';

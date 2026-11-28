@@ -2,7 +2,9 @@
 const linear = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
 
 function gerarGLB(modelo, config){
-  const {desloca, angulos} = posar(modelo, config.pose);
+  const {desloca, juntas} = posar(modelo, config.pose);
+  const produto = (p, o) => [p[3]*o[0] + p[0]*o[3] + p[1]*o[2] - p[2]*o[1], p[3]*o[1] - p[0]*o[2] + p[1]*o[3] + p[2]*o[0], p[3]*o[2] + p[0]*o[1] - p[1]*o[0] + p[2]*o[3], p[3]*o[3] - p[0]*o[0] - p[1]*o[1] - p[2]*o[2]];
+  const contrario = q => [-q[0], -q[1], -q[2], q[3]];
   const gltf = {asset:{version:'2.0', generator:'Criador de personagem WO'}, scene:0, scenes:[{nodes:[0]}], nodes:[], meshes:[], materials:[], accessors:[], bufferViews:[], buffers:[]};
   const partes = [], mats = new Map(); let tamanho = 0;
   const material = cor => {
@@ -25,7 +27,7 @@ function gerarGLB(modelo, config){
   const porNome = Object.fromEntries(modelo.pecas.map(p => [p.nome, p]));
   for (const p of modelo.pecas){
     const grupos = new Map();
-    for (const q of p.quads){ if (!grupos.has(q.cor)) grupos.set(q.cor, []); grupos.get(q.cor).push(q); }
+    for (const q of (typeof Maos === 'object' ? Maos.quadsDaPeca(p, config.pose) : p.quads)){ if (!grupos.has(q.cor)) grupos.set(q.cor, []); grupos.get(q.cor).push(q); }
     const primitivas = [];
     for (const [cor, quads] of grupos){
       const pos = new Float32Array(quads.length * 12), nor = new Float32Array(quads.length * 12), ind = new Uint32Array(quads.length * 6);
@@ -40,8 +42,10 @@ function gerarGLB(modelo, config){
     }
     if (primitivas.length) gltf.meshes.push({name:p.nome, primitives:primitivas});      /* peça perdida por um zumbi: só a junta */
     indice[p.nome] = gltf.nodes.length;
-    const t = p.pai ? menos(p.pivo, porNome[p.pai].pivo) : soma(p.pivo, desloca);
-    gltf.nodes.push({name:p.nome, ...(primitivas.length ? {mesh:gltf.meshes.length - 1} : {}), translation:t, rotation:quatEuler(angulos[p.nome] || [0, 0, 0])});
+    const minha = juntas[p.nome], dele = p.pai ? juntas[p.pai] : null;
+    const t = dele ? girar(contrario(dele.q), menos(minha.pos, dele.pos)) : soma(minha.pos, desloca);
+    const giro = dele ? produto(contrario(dele.q), minha.q) : minha.q;
+    gltf.nodes.push({name:p.nome, ...(primitivas.length ? {mesh:gltf.meshes.length - 1} : {}), translation:t, rotation:giro});
   }
   for (const p of modelo.pecas){
     const pai = p.pai ? gltf.nodes[indice[p.pai]] : gltf.nodes[0];

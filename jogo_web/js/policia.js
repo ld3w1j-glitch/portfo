@@ -193,7 +193,7 @@ equipar = function(c, cx){
   if (c.colete.estilo === 'policial') coletePolicial(c, cx);
   if (c.colete.estilo === 'transito') coleteTransito(c, cx);
   if (c.cinturao?.usa) cinturaoPm(c, cx);
-  if (c.tonfa?.usa) tonfa(c, cx);
+  if (c.tonfa?.usa && !(c.arma && c.arma.estilo !== 'nenhum')) tonfa(c, cx);
   if (c.escudo?.usa) escudoPm(c, cx);
 };
 

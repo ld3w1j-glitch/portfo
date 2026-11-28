@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Ver animações</title>
+<link rel="stylesheet" href="estilo.css">
+<style>
+  .app{grid-template-columns:1fr 340px}
+  #visor{background:linear-gradient(#e9eaec,#cfd1d6)}
+  #conteudo{padding:16px}
+  .lista{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+  .lista button{background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:14px 8px;font:700 15px Inter,system-ui,sans-serif;cursor:pointer}
+  .lista button.ativo{background:var(--laranja);border-color:var(--laranja);color:var(--grafite)}
+  .rotulo{display:block;margin:0 0 8px}
+  select{width:100%;font:inherit;background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:9px;margin-bottom:20px}
+  .faixa input{width:100%;accent-color:var(--laranja);margin-bottom:20px}
+  .nota{color:var(--cinza);font-size:13px}
+  @media(max-width:900px){.app{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="palco" aria-label="Personagem">
+    <header>
+      <h1>Ver <span>animações</span></h1>
+      <div class="modelos"><a class="abrir-cenario" href="inicio.html">← Todas as ferramentas</a></div>
+    </header>
+    <canvas id="visor" tabindex="0" aria-label="Personagem em movimento. Arraste para girar e role para aproximar."></canvas>
+    <footer>
+      <div class="vistas">
+        <button type="button" data-giro="0">Frente</button>
+        <button type="button" data-giro="-0.7">3/4</button>
+        <button type="button" data-giro="-1.5708">Lado</button>
+        <button type="button" data-giro="3.1416">Costas</button>
+      </div>
+      <p id="aviso" role="status"></p>
+    </footer>
+  </section>
+  <aside class="painel">
+    <div id="conteudo">
+      <span class="rotulo">Movimento</span>
+      <div class="lista" id="modos"></div>
+      <label class="rotulo" for="arma">Arma na mão</label>
+      <select id="arma"></select>
+      <label class="rotulo" for="roupa">Roupa</label>
+      <select id="roupa"></select>
+      <label class="rotulo faixa" for="ritmo">Velocidade do movimento</label>
+      <div class="faixa"><input id="ritmo" type="range" min="0.2" max="1.5" step="0.1" value="1"></div>
+      <p class="nota">Arraste o personagem para girar. Deixe a velocidade baixa para olhar cada passo.</p>
+    </div>
+  </aside>
+</main>
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/quimicos.js"></script>
+<script src="js/armas.js"></script>
+<script src="js/armas-fogo.js"></script>
+<script src="js/armas-detalhes.js"></script>
+<script src="js/armas-extras.js"></script>
+<script src="js/armas-mods.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/animacao.js"></script>
+<script src="js/maos.js"></script>
+<script src="js/zumbi.js"></script>
+<script src="js/validar.js"></script>
+<script src="js/visor.js"></script>
+<script>
+const MODOS = {parado:'Parado', andar:'Andando', correr:'Correndo', mirar:'Mirando'};
+const ROUPAS_TESTE = {salvo:'Meu último do criador', soldado:'Soldado', sobrevivente:'Sobrevivente', saqueador:'Saqueador', casual:'Roupa casual'};
+const visor = criarVisor(document.getElementById('visor'));
+const $ = id => document.getElementById(id);
+let modo = 'andar', modelo = null, animador = null, atual = null, fase = 0, mexe = 1, corre = 0, anterior = 0;
+
+function personagem(){
+  const roupa = $('roupa').value; let c = null;
+  if (roupa === 'salvo'){ try { const s = localStorage.getItem('wo-criador-personagem'); if (s) c = validar(JSON.parse(s)); } catch (e){} }
+  if (!c){ c = structuredClone(PADRAO_WASHINGTON); if (KITS[roupa]) aplicarKit(c, roupa); }
+  c.lapis.usa = false; c.arma.estilo = $('arma').value;
+  modelo = montar(c); refazer();
+}
+/* a mão de apoio muda entre segurar e mirar, então o desenho é refeito ao trocar */
+function refazer(){ animador = Animacao.animador(modelo, modo === 'mirar' ? (Animacao.classeDaArma(modelo.arma) === 'curta' ? 'mirando_uma' : 'mirando') : 'andando'); }
+/* transforma o instante atual do animador no formato que o visor desenha */
+function quadros(){
+  const q = [], p = animador.pos, n = animador.nor, k = animador.cor;
+  const hex = v => Math.round(v * 255).toString(16).padStart(2, '0');
+  /* as cores não mudam: calculadas só na primeira vez de cada personagem */
+  if (!animador.cores) animador.cores = Array.from({length:animador.total / 6}, (_, j) => '#' + hex(k[j * 18]) + hex(k[j * 18 + 1]) + hex(k[j * 18 + 2]));
+  for (let i = 0; i < animador.total; i += 6){
+    const v = j => [p[(i + j) * 3], p[(i + j) * 3 + 1], p[(i + j) * 3 + 2]];
+    q.push({v:[v(0), v(1), v(2), v(5)], n:[n[i * 3], n[i * 3 + 1], n[i * 3 + 2]], cor:animador.cores[i / 6]});
+  }
+  return q;
+}
+function pose(){
+  const arma = modelo.arma, chega = (v, alvo, dt) => v + (alvo - v) * Math.min(1, dt * 6);
+  if (modo === 'mirar') return Animacao.mirar(arma, Animacao.classeDaArma(arma) === 'curta' ? 'mirando_uma' : 'mirando', modelo.mods);
+  const base = Animacao.parado(arma, modelo.mods);
+  if (mexe < .01) return base;
+  return Animacao.misturar(base, Animacao.passada(fase, corre, arma, modelo.mods), mexe);
+}
+function passo(agora){
+  const dt = anterior ? Math.min(.05, (agora - anterior) / 1000) : .016; anterior = agora;
+  const ritmo = Number($('ritmo').value), chega = (v, alvo) => v + (alvo - v) * Math.min(1, dt * 6);
+  const andando = modo === 'andar' || modo === 'correr';
+  mexe = chega(mexe, andando ? 1 : 0); corre = chega(corre, modo === 'correr' ? 1 : 0);
+  /* mesmo compasso do mapa: velocidade dividida pelo tamanho da passada */
+  if (mexe > .01) fase += (2.1 + 3.3 * corre) / (1.45 + 1.05 * corre) * Math.PI * 2 * dt * ritmo;
+  const alvo = pose();
+  atual = atual ? Animacao.misturar(atual, alvo, Math.min(1, dt * (andando && mexe > .97 ? 60 : 10))) : alvo;
+  animador.atualizar(atual);
+  visor.carregar(quadros()); visor.desenhar();
+  requestAnimationFrame(passo);
+}
+function botoes(){
+  $('modos').replaceChildren(...Object.entries(MODOS).map(([id, nome]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = nome; b.dataset.modo = id;
+    b.className = id === modo ? 'ativo' : ''; b.addEventListener('click', () => { modo = id; refazer(); botoes(); }); return b;
+  }));
+}
+$('arma').add(new Option('Sem arma', 'nenhum'));
+for (const [t, titulo] of Object.entries(TIPOS_ARMA)){
+  const g = document.createElement('optgroup'); g.label = titulo;
+  for (const [id, a] of Object.entries(ARMAS)) if (a.tipo === t) g.append(new Option(a.nome, id));
+  $('arma').append(g);
+}
+for (const [id, nome] of Object.entries(ROUPAS_TESTE)) $('roupa').add(new Option(nome, id));
+$('roupa').value = 'soldado';
+$('arma').addEventListener('change', () => { personagem(); atual = null; });
+$('roupa').addEventListener('change', () => { personagem(); atual = null; });
+document.querySelectorAll('[data-giro]').forEach(b => b.addEventListener('click', () => { visor.cam.giro = Number(b.dataset.giro); }));
+botoes();
+if (!visor) $('aviso').textContent = 'Este navegador não conseguiu abrir o desenho em 3D (WebGL).';
+else { personagem(); Object.assign(visor.cam, {giro:-.9, elev:.14, dist:4.6, alvo:.9}); requestAnimationFrame(passo); }
+</script>
+</body>
+</html>

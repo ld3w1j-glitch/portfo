@@ -41,6 +41,10 @@ function paleta(c){
   const equip = {chapeu:c.chapeu.cor, colete:c.colete.cor, mochila:c.mochila.cor, cinto:c.cinto.cor, joelheira:c.joelheiras.cor, luva:c.luvas.cor, mascara:c.mascara.cor};
   if (c.zumbi) coresZumbi(c, m);
   const emb = EMBLEMAS[c.emblema?.estilo] || {};
+  Object.assign(m, {filtro_rosa:'#C94F86', filtro_amarelo:'#E6C229'});
+  for (const [s, f] of [['', 1], ['_sombra', .82]]) m['protetor' + s] = tom(c.protetor?.cor || '#2E7BC4', f);
+  Object.assign(m, ARMA_CORES);
+  m.pele_vinco = tom(p, .62);                                          /* separação entre os dedos */
   m.emb_fundo = emb.fundo || '#17171A'; m.emb_simbolo = emb.simbolo || '#F5F5EF'; m.borracha_eq = '#33363B'; m.medico_eq = '#2E7D46';
   Object.assign(m, {pm_texto:'#F1F1EC', pm_vermelho:'#C4261E', pm_luz_vermelha:'#FF4436', pm_limao:'#C8E02A', pm_refletivo:'#DDE3E6'});
   if (c.colete.estilo === 'transito') m.pm_limao = c.colete.cor;
@@ -54,7 +58,7 @@ function paleta(c){
 /* três tons por material, para o aspecto de pixels */
 const LISOS = new Set(['branco', 'iris', 'sobrancelha', 'labio', 'labio_escuro', 'boca', 'dente', 'orelha', 'olheira', 'metal', 'aro', 'lente', 'ponteira', 'botao', 'grafite', 'madeira', 'borracha', 'lapis', 'remendo', 'remendo_claro',
   'metal_escuro', 'visor', 'lente_verde', 'brilho', 'luz', 'lanterna', 'preto', 'lente_ambar', 'lente_azul', 'lente_vermelha',
-  'olho_morto', 'pupila', 'olho_vermelho', 'orbita', 'dente_podre', 'linha', 'remendo_dourado', 'placa_amarela', 'pm_texto', 'pm_vermelho', 'pm_luz_vermelha', 'pm_refletivo', 'emb_fundo', 'emb_simbolo']);
+  'olho_morto', 'pupila', 'olho_vermelho', 'orbita', 'dente_podre', 'linha', 'remendo_dourado', 'placa_amarela', 'pm_texto', 'pm_vermelho', 'pm_luz_vermelha', 'pm_refletivo', 'emb_fundo', 'emb_simbolo', 'filtro_rosa']);
 function tonalizar(pal, mat, chave){
   const base = pal[mat] || '#FF00FF';
   if (LISOS.has(mat)) return base;
@@ -123,7 +127,7 @@ function montar(c){
     let extras = nome === 'cabeca' ? volumeCabelo(c.cabelo.estilo, cheios) : [];
     if (c.zumbi && (c.zumbi.cranio === 'cerebro' || c.zumbi.cranio === 'aberto')) extras = extras.filter(v => v[2] < 17);
     if (c.chapeu.estilo !== 'nenhum' && !CHAPEUS_CIVIS[c.chapeu.estilo]?.semCortarCabelo) extras = extras.filter(v => v[2] < 15 && (v[1] >= 0 || v[2] < 14));      /* o cabelo alto fica por baixo do chapéu */
-    if (c.facial.estilo === 'balaclava') extras = [];
+    if (c.facial.estilo === 'balaclava' || CAPUZES.includes(c.chapeu.estilo)) extras = [];
     const doCabelo = new Set(extras.map(v => v.join(',')));
     const todos = new Set([...cheios, ...doCabelo]);
     const kTopo = Math.max(...g.vox.map(v => v[2]));
@@ -180,13 +184,14 @@ function montar(c){
   const presos = (peca, ...a) => { if (!removidas.has(peca)) cx(peca, ...a); };
   acessorios(c, presos);
   equipar(c, presos);
+  if (typeof Maos === 'object') Maos.aplicar(c, presos, pecas);          /* mãos fechadas na arma */
   if (c.zumbi){
     zumbiExtras(c, cx);
     zumbiPorte(c, pecas);
     const f = c.zumbi.altura;
     if (f !== 1) for (const p of Object.values(pecas)){ p.pivo = p.pivo.map(v => v * f); for (const q of p.quads) q.v = q.v.map(v => v.map(x => x * f)); }
   }
-  return {pecas:Object.values(pecas), piv};
+  return {pecas:Object.values(pecas), piv, arma:c.arma && c.arma.estilo !== 'nenhum' ? c.arma.estilo : null, mods:c.modarma};
 }
 
 function pintarPele(p){
@@ -220,7 +225,7 @@ function acessorios(c, cx){
     }
     r(-.75, .75, y0, y1, 11.2, 11.2 + e);
   }
-  if (c.lapis.usa){
+  if (c.lapis.usa && !armado(c)){
     const t = ESTRUTURA.mao_d.tam, x = t[0] / 2 - .45, z = 1.1, w = .9;
     cx('mao_d', x, x + w, t[1] + .6, t[1] + 1.8, z, z + w, 'borracha'); cx('mao_d', x - .05, x + w + .05, t[1], t[1] + .6, z - .05, z + w + .05, 'metal');
     cx('mao_d', x, x + w, -4.5, t[1], z, z + w, 'lapis'); cx('mao_d', x + .15, x + w - .15, -5.7, -4.5, z + .15, z + w - .15, 'madeira');
@@ -250,7 +255,9 @@ const soma = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 
 /* aplica a pose: devolve os quads em coordenadas do mundo, com os pés no chão e o personagem centrado */
 function posar(modelo, nomePose){
-  const ang = ANGULOS[nomePose] || {}, porNome = Object.fromEntries(modelo.pecas.map(p => [p.nome, p])), feitos = {};
+  const reto = typeof Animacao === 'object' ? Animacao.daPose(nomePose, modelo.arma, modelo.mods) : null;   /* andar, mirar e segurar arma */
+  const ang = reto ? {} : ANGULOS[nomePose] || {}, porNome = Object.fromEntries(modelo.pecas.map(p => [p.nome, p])), feitos = {};
+  if (reto) Object.assign(feitos, Animacao.globais(reto));
   const mult = (p, o) => [p[3]*o[0] + p[0]*o[3] + p[1]*o[2] - p[2]*o[1], p[3]*o[1] - p[0]*o[2] + p[1]*o[3] + p[2]*o[0],
                           p[3]*o[2] + p[0]*o[1] - p[1]*o[0] + p[2]*o[3], p[3]*o[3] - p[0]*o[0] - p[1]*o[1] - p[2]*o[2]];
   const no = nome => {
@@ -263,12 +270,12 @@ function posar(modelo, nomePose){
   const quads = [];
   for (const p of modelo.pecas){
     const t = no(p.nome);
-    for (const f of p.quads) quads.push({peca:p.nome, v:f.v.map(v => soma(t.pos, girar(t.q, v))), n:girar(t.q, f.n), cor:f.cor});
+    for (const f of (typeof Maos === 'object' ? Maos.quadsDaPeca(p, nomePose) : p.quads)) quads.push({peca:p.nome, v:f.v.map(v => soma(t.pos, girar(t.q, v))), n:girar(t.q, f.n), cor:f.cor});
   }
   const lim = [[1e9, -1e9], [1e9, -1e9], [1e9, -1e9]];
   for (const f of quads) if (f.peca === 'quadril') for (const v of f.v) for (let d = 0; d < 3; d++){ lim[d][0] = Math.min(lim[d][0], v[d]); lim[d][1] = Math.max(lim[d][1], v[d]); }
   let chao = 1e9; for (const f of quads) for (const v of f.v) chao = Math.min(chao, v[1]);
   const desloca = [-(lim[0][0] + lim[0][1]) / 2, -chao, -(lim[2][0] + lim[2][1]) / 2];
   for (const f of quads) f.v = f.v.map(v => soma(v, desloca));
-  return {quads, desloca, angulos:ang};
+  return {quads, desloca, angulos:ang, juntas:feitos};
 }

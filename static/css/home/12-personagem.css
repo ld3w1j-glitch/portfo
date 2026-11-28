@@ -12,7 +12,11 @@
              linear-gradient(90deg,var(--wo-linha) 1px,transparent 1px) 0 0/48px 100%}
 .p3d-boneco{position:absolute;left:50%;bottom:7%;height:84%;width:62%;transform:translateX(-50%);z-index:1;
   display:flex;align-items:flex-end;justify-content:center;outline-offset:4px}
-.p3d-boneco img{max-height:100%;max-width:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+.p3d-boneco img,.p3d-tela{max-height:100%;max-width:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+.p3d-tela{height:100%;width:100%;pointer-events:none}
+.p3d-tela[hidden]{display:none}
+.p3d-boneco.entra{animation:p3dTroca .35s ease-out both}
+@keyframes p3dTroca{from{opacity:0}to{opacity:1}}
 .p3d-palco.gira .p3d-boneco{cursor:grab;touch-action:pan-y}
 .p3d-palco.gira .p3d-boneco:active{cursor:grabbing}
 .p3d-boneco:focus-visible{outline:2px solid var(--wo-laranja)}
@@ -49,4 +53,5 @@
 }
 @media(prefers-reduced-motion:reduce){
   .p3d-et{animation:none}
+  .p3d-boneco.entra{animation:none}
 }
