@@ -327,18 +327,39 @@ function prepararPersonagem(){
   const modelo = montar(c);
   const arma = modelo.arma, mods = modelo.mods, animador = Animacao.animador(modelo);
   anda.quadros = {animador, arma, mods, parado:Animacao.parado(arma, mods), bp:buffer(gl.ARRAY_BUFFER, animador.pos), bn:buffer(gl.ARRAY_BUFFER, animador.nor), bc:buffer(gl.ARRAY_BUFFER, animador.cor), n:animador.total};
-  anda.mexe = 0; anda.corre = 0; anda.fase = 0; mexerPersonagem(0, false, false);
+  anda.loco = Locomocao.novo(anda.rumo); mostrarPose();
 }
-/* calcula o instante atual: passa suavemente de parado para andando e de andando para correndo */
-function mexerPersonagem(dt, andando, correndo){
-  const q = anda.quadros, puxa = (v, alvo, ritmo) => v + (alvo - v) * Math.min(1, dt * ritmo);
-  anda.mexe = puxa(anda.mexe, andando ? 1 : 0, andando ? 9 : 7); anda.corre = puxa(anda.corre, correndo ? 1 : 0, 5);
-  if (!andando && anda.mexe < .015) anda.mexe = 0;
-  let pose = q.parado;
-  if (anda.mexe > 0){ const passo = Animacao.passada(anda.fase, anda.corre, q.arma, q.mods); pose = anda.mexe > .995 ? passo : Animacao.misturar(q.parado, passo, anda.mexe); }
-  q.animador.atualizar(pose);
+/* calcula o desenho do instante atual a partir do estado da locomoção */
+function mostrarPose(){
+  const q = anda.quadros;
+  q.animador.atualizar(Locomocao.pose(anda.loco, q.parado, q.arma, q.mods));
   gl.bindBuffer(gl.ARRAY_BUFFER, q.bp); gl.bufferData(gl.ARRAY_BUFFER, q.animador.pos, gl.DYNAMIC_DRAW);
   gl.bindBuffer(gl.ARRAY_BUFFER, q.bn); gl.bufferData(gl.ARRAY_BUFFER, q.animador.nor, gl.DYNAMIC_DRAW);
+}
+/* um quadro de caminhada: quer = direção desejada (ou null). Em 1ª pessoa o corpo acompanha a câmera. */
+function caminhar(dt, quer, correndo){
+  const e = anda.loco, x0 = anda.x, z0 = anda.z;
+  let passo;
+  if (anda.primeira){
+    /* nos olhos do personagem o controle é direto (anda de lado e de costas), só com arranque e freio */
+    const v = quer === null ? 0 : (correndo ? Locomocao.AJUSTES.correr : Locomocao.AJUSTES.andar);
+    if (quer !== null) anda.direcao = quer;
+    const lim = (v > e.vel ? Locomocao.AJUSTES.arranque : Locomocao.AJUSTES.freio) * dt;
+    e.vel += Math.max(-lim, Math.min(lim, v - e.vel)); e.rumo = Locomocao.angulo(cam.giro + Math.PI); e.velAng = 0;
+    passo = {dx:Math.sin(anda.direcao || 0) * e.vel * dt, dz:Math.cos(anda.direcao || 0) * e.vel * dt, falta:0};
+  } else passo = Locomocao.avancar(e, dt, quer, correndo);
+  /* anda em passos curtos, para não atravessar parede quando a máquina engasga */
+  const partes = Math.max(1, Math.ceil(Math.hypot(passo.dx, passo.dz) / .12));
+  for (let i = 0; i < partes; i++){
+    anda.x = Math.max(-MEIO + 2, Math.min(MEIO - 2, anda.x + passo.dx / partes)); anda.z = Math.max(-MEIO + 2, Math.min(MEIO - 2, anda.z + passo.dz / partes));
+    if (povoado.solidos) [anda.x, anda.z] = Povoar.empurrar(povoado, anda.x, anda.z, anda.nivel);
+    assentar();
+  }
+  const andou = Math.min(Math.hypot(anda.x - x0, anda.z - z0), e.vel * dt);
+  if (dt > 0 && andou < e.vel * dt * .35) e.vel = Math.max(andou / dt, e.vel - Locomocao.AJUSTES.freio * dt);   /* encostou em algo */
+  Locomocao.assentarPasso(e, dt, andou, passo.falta);
+  anda.rumo = e.rumo; anda.andando = e.vel > .05;
+  mostrarPose();
 }
 /* põe o personagem no chão certo (terreno, degrau, piso ou escada) e ajusta a câmera ao entrar e sair de uma casa */
 function assentar(){
@@ -361,7 +382,7 @@ function alternarCaminhada(){
   if (anda.ativo){
     if (!anda.quadros) prepararPersonagem();
     anda.x = cam.x; anda.z = cam.z; anda.rumo = cam.giro + Math.PI; anda.antes = {dist:cam.dist, elev:cam.elev};
-    anda.primeira = false; anda.nivel = 0; anda.casa = null; anda.porFora = null;
+    anda.primeira = false; anda.nivel = 0; anda.casa = null; anda.porFora = null; anda.loco = Locomocao.novo(anda.rumo);
     cam.dist = 7.5; cam.elev = .22; assentar(); canvas.focus();
   } else { anda.casa = null; anda.primeira = false; if (anda.antes){ cam.dist = anda.antes.dist; cam.elev = anda.antes.elev; } }
   $('#caminhar').textContent = anda.ativo ? '✋ Parar de caminhar' : '🚶 Caminhar';
@@ -381,31 +402,22 @@ function quadro(agora){
   const frente = (teclas.has('w') || teclas.has('arrowup') ? 1 : 0) - (teclas.has('s') || teclas.has('arrowdown') ? 1 : 0), lado = (teclas.has('d') || teclas.has('arrowright') ? 1 : 0) - (teclas.has('a') || teclas.has('arrowleft') ? 1 : 0);
   if (teclas.has('q')){ cam.giro -= 1.6 * dt; continua = true; } if (teclas.has('e')){ cam.giro += 1.6 * dt; continua = true; }
   const fx = -Math.sin(cam.giro), fz = -Math.cos(cam.giro), dx = -fz, dz = fx;               /* direita de quem olha */
-  anda.andando = false;
-  if (frente || lado){
-    const t = Math.hypot(frente, lado), mx = (fx * frente + dx * lado) / t, mz = (fz * frente + dz * lado) / t, corre = teclas.has('shift');
-    if (anda.ativo){
-      const vel = corre ? 5.4 : 2.1;
-      /* anda em passos curtos, para não atravessar parede quando a máquina engasga */
-      const partes = Math.max(1, Math.ceil(vel * dt / .12));
-      for (let i = 0; i < partes; i++){
-        anda.x = Math.max(-MEIO + 2, Math.min(MEIO - 2, anda.x + mx * vel * dt / partes)); anda.z = Math.max(-MEIO + 2, Math.min(MEIO - 2, anda.z + mz * vel * dt / partes));
-        if (povoado.solidos) [anda.x, anda.z] = Povoar.empurrar(povoado, anda.x, anda.z, anda.nivel);
-        assentar();
-      }
-      const alvo = Math.atan2(mx, mz); let dif = ((alvo - anda.rumo + Math.PI * 3) % (Math.PI * 2)) - Math.PI; anda.rumo += dif * Math.min(1, dt * 12);
-      anda.fase += vel * dt / (1.45 + (2.5 - 1.45) * anda.corre) * Math.PI * 2; anda.andando = true;
-    } else {
-      const vel = Math.max(12, cam.dist * .75) * (corre ? 2.4 : 1);
-      cam.x = Math.max(-MEIO, Math.min(MEIO, cam.x + mx * vel * dt)); cam.z = Math.max(-MEIO, Math.min(MEIO, cam.z + mz * vel * dt));
-    }
+  if (!anda.ativo) anda.andando = false;
+  if (anda.ativo && anda.quadros){
+    const quer = frente || lado ? Math.atan2(fx * frente + dx * lado, fz * frente + dz * lado) : null;
+    caminhar(dt, quer, teclas.has('shift'));
+    continua = true;                                                   /* parado ele respira: o desenho não para */
+  } else if (frente || lado){
+    const t = Math.hypot(frente, lado), mx = (fx * frente + dx * lado) / t, mz = (fz * frente + dz * lado) / t;
+    const vel = Math.max(12, cam.dist * .75) * (teclas.has('shift') ? 2.4 : 1);
+    cam.x = Math.max(-MEIO, Math.min(MEIO, cam.x + mx * vel * dt)); cam.z = Math.max(-MEIO, Math.min(MEIO, cam.z + mz * vel * dt));
     continua = true;
   }
-  if (anda.ativo && anda.quadros){
-    const estava = anda.mexe;
-    if (anda.andando || estava > 0){ mexerPersonagem(dt, anda.andando, anda.andando && teclas.has('shift')); if (!anda.andando){ anda.fase += dt * 6 * anda.mexe; continua = true; } }
+  if (anda.ativo){
+    assentar();
+    const segue = anda.primeira || Math.hypot(anda.x - cam.x, anda.z - cam.z) > 3 ? 1 : 1 - Math.exp(-14 * dt), alvoY = anda.y + (anda.casa ? 1.0 : 1.35);
+    cam.x += (anda.x - cam.x) * segue; cam.z += (anda.z - cam.z) * segue; cam.y += (alvoY - cam.y) * (anda.primeira || Math.abs(alvoY - cam.y) > 2 ? 1 : 1 - Math.exp(-12 * dt));
   }
-  if (anda.ativo){ assentar(); cam.x = anda.x; cam.z = anda.z; cam.y = anda.y + (anda.casa ? 1.0 : 1.35); }
   else cam.y += (Mundo.altura(cam.x, cam.z) - cam.y) * Math.min(1, dt * 8);
   if (Math.abs(Mundo.altura(cam.x, cam.z) - cam.y) > .3 && !anda.ativo) continua = true;
   /* pincel enquanto o botão está apertado */

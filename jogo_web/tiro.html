@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Primeira pessoa</title>
+<link rel="stylesheet" href="estilo.css">
+<style>
+  .app{grid-template-columns:1fr 340px}
+  #conteudo{padding:16px}
+  .tela{position:relative;flex:1;min-height:0;display:flex;overflow:hidden;user-select:none}
+  .tela canvas{cursor:crosshair;background:#bdccdb}
+  .tela canvas:active{cursor:crosshair}
+  /* pelos nomes também: o código troca a classe do retículo, da luneta e do marcador */
+  .sobre,#reticulo,#luneta,#marca{position:absolute;pointer-events:none}
+  #cruz{left:50%;top:50%;--folga:8px}
+  #cruz i{position:absolute;background:#fff;box-shadow:0 0 2px #000;width:2px;height:9px;left:-1px;top:-4.5px}
+  #cruz i:nth-child(1){transform:translateY(calc(-1 * var(--folga) - 4px))}
+  #cruz i:nth-child(2){transform:translateY(calc(var(--folga) + 4px))}
+  #cruz i:nth-child(3){transform:translateX(calc(-1 * var(--folga) - 4px)) rotate(90deg)}
+  #cruz i:nth-child(4){transform:translateX(calc(var(--folga) + 4px)) rotate(90deg)}
+  #ponto{left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:#fff;box-shadow:0 0 3px #000}
+  /* retículo e luneta: o centro é exatamente onde o tiro vai */
+  #reticulo,#luneta{inset:0;width:100%;height:100%;opacity:0}
+  #luneta{opacity:1}
+  /* ao encostar o olho na mira, as bordas escurecem de leve */
+  #foco{inset:0;opacity:0;background:radial-gradient(ellipse 62% 66% at 50% 50%,transparent 42%,rgba(8,9,11,.34) 76%,rgba(8,9,11,.66) 100%)}
+  #marca{left:50%;top:50%;width:26px;height:26px;margin:-13px;opacity:0}
+  #marca::before,#marca::after{content:"";position:absolute;left:12px;top:0;width:2.5px;height:26px;background:linear-gradient(#fff 0 32%,transparent 32% 68%,#fff 68%);transform:rotate(45deg)}
+  #marca::after{transform:rotate(-45deg)}
+  #marca.forte::before,#marca.forte::after{background:linear-gradient(#ff4030 0 34%,transparent 34% 66%,#ff4030 66%)}
+  #barra{left:50%;top:calc(50% + 34px);width:90px;height:6px;margin-left:-45px;background:rgba(0,0,0,.45);opacity:0}
+  #carga{display:block;height:100%;width:0;background:var(--laranja)}
+  #mensagem{left:0;right:0;top:calc(50% + 54px);text-align:center;font-weight:700;font-size:17px;color:#fff;text-shadow:0 1px 4px #000;opacity:0}
+  .caixa{background:rgba(23,23,26,.82);color:#f5f5ef;padding:7px 12px}
+  #canto{right:12px;bottom:12px;text-align:right;border-right:5px solid var(--laranja)}
+  #nomeArma{display:block;font-size:13px;color:#cfcfcf}
+  #municao{display:block;font-size:22px;font-weight:800}
+  #placar{left:12px;top:12px;font-size:13px}
+  #convite{left:12px;bottom:12px;font-size:12.5px;max-width:240px}
+  .botoes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+  .botoes button,.larga{background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:12px 6px;font:700 14px Inter,system-ui,sans-serif;cursor:pointer;touch-action:none;user-select:none}
+  .botoes button:active,.botoes button.ativo{background:var(--laranja);color:var(--grafite)}
+  .botoes button:disabled{opacity:.4;cursor:default}
+  .larga{display:block;width:100%;margin-bottom:12px;background:var(--laranja);color:var(--grafite);border-color:var(--laranja)}
+  .rotulo{display:block;margin:0 0 6px}
+  select{width:100%;font:inherit;background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:8px;margin-bottom:14px}
+  select:disabled{opacity:.4}
+  .marcar{display:flex;gap:9px;align-items:center;margin:0 0 12px;cursor:pointer}
+  .marcar input{width:18px;height:18px;accent-color:var(--laranja)}
+  input[type=range]{width:100%;accent-color:var(--laranja);margin-bottom:16px}
+  .nota{color:var(--cinza);font-size:13px;margin-bottom:16px}
+  #ativarSom{position:absolute;right:12px;top:52px;z-index:3;background:var(--laranja);color:var(--grafite);border:0;padding:10px 16px;font:800 15px Inter,system-ui,sans-serif;cursor:pointer}
+  .so-arena{display:none}
+  .arena .so-arena{display:block}
+  .arena .so-estande,.arena #peca_mira,.arena #peca_ponta,.arena #peca_baixo,.arena #peca_carregador,.arena label[for^="peca_"],.arena #recarregarTela,.arena #placar,.arena #canto{display:none}
+  .arena #ativarSom{top:12px}
+  #danoTela{inset:0;opacity:0;background:radial-gradient(ellipse at 50% 50%,transparent 38%,rgba(150,12,6,.55) 76%,rgba(110,0,0,.9) 100%)}
+  #danoDirecao{left:50%;top:50%;width:0;height:0;opacity:0}
+  #danoDirecao i{position:absolute;left:-34px;top:-118px;width:68px;height:14px;background:#e0261a;clip-path:polygon(0 100%,50% 0,100% 100%,50% 55%)}
+  .arena #estadoCaixa{left:12px;top:12px;font-size:13px;max-width:min(420px,62%);border-left:5px solid #2fbf55}
+  .arena #estadoCaixa[data-cond=debilitado]{border-left-color:#e8b81e}.arena #estadoCaixa[data-cond=grave]{border-left-color:#d6392b}
+  .arena #barras{left:12px;bottom:12px;width:min(270px,55%);display:grid;grid-template-columns:54px 1fr;gap:5px 8px;align-items:center;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 3px #000}
+  .barra{height:11px;background:rgba(0,0,0,.5);position:relative;overflow:hidden}
+  .barra span{display:block;height:100%;background:#d94a3a}
+  .barra.folego span{background:#e8b81e}.barra.arma span{background:#9fb4c4}
+  .barra em{position:absolute;right:0;top:0;height:100%;background:repeating-linear-gradient(45deg,#5b4a1a 0 4px,#2c2410 4px 8px)}
+  .barra.baixo{outline:1px solid #ff6a4a}
+  .arena #agarrao{left:50%;bottom:90px;width:min(380px,84%);transform:translateX(-50%);text-align:center;color:#fff;text-shadow:0 1px 4px #000}
+  #agarrao b{display:block;font-size:17px;margin-bottom:6px}
+  #agarrao .barra{height:18px;border:2px solid #fff}#agarrao .barra span{background:var(--laranja);width:0}
+  #agarrao small{display:block;margin-top:6px;font-size:14px;font-weight:800}
+  #agarrao.chao .barra span{background:#e0261a}
+  .arena #fim{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,10,12,.72);color:#fff;text-align:center;padding:20px}
+  #fim h2{font-size:34px;text-transform:uppercase}
+  #fim button{background:var(--laranja);color:var(--grafite);border:0;padding:13px 24px;font:800 16px Inter,system-ui,sans-serif;cursor:pointer}
+  .arena #convite{display:none}
+  .terceira #ponto,.terceira #cruz,.terceira #marca{display:none}
+  .terceira #barra{top:auto;bottom:96px}
+  .terceira #agarrao{bottom:auto;top:84px}
+  .terceira #mensagem{top:auto;bottom:118px}
+  [hidden]{display:none!important}
+  @media(max-width:900px){.app{grid-template-columns:1fr}.tela{height:62vh;flex:none}#convite{display:none}}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="palco" aria-label="Visão em primeira pessoa">
+    <header>
+      <h1>Primeira <span>pessoa</span></h1>
+      <div class="modelos"><a class="abrir-cenario" href="inicio.html">← Todas as ferramentas</a></div>
+    </header>
+    <div class="tela">
+      <canvas id="visao" tabindex="0" aria-label="Estande de teste visto pelos olhos do personagem. Clique para controlar."></canvas>
+      <div class="sobre" id="cruz"><i></i><i></i><i></i><i></i></div>
+      <div class="sobre so-arena" id="danoTela"></div>
+      <div class="sobre so-arena" id="danoDirecao"><i></i></div>
+      <div class="sobre so-arena caixa" id="estadoCaixa"><span id="estadoTexto"></span></div>
+      <div class="sobre so-arena" id="barras">
+        <label>Vida</label><div class="barra vida"><span id="barraVida"></span></div>
+        <label>Fôlego</label><div class="barra folego"><span id="barraFolego"></span><em id="folegoPerdido" title="Fôlego máximo gasto: volta dormindo"></em></div>
+        <label>Arma</label><div class="barra arma"><span id="barraArma"></span></div>
+      </div>
+      <div class="sobre so-arena" id="agarrao" hidden><b id="etapaAgarrao"></b><div class="barra"><span id="barraAgarrao"></span></div><small id="dicaAgarrao"></small></div>
+      <div class="so-arena" id="fim" hidden><h2 id="fimTitulo"></h2><p id="fimTexto"></p><button type="button" id="fimDeNovo">Lutar de novo</button></div>
+      <div class="sobre" id="ponto"></div>
+      <div class="sobre" id="foco"></div>
+      <svg id="reticulo" aria-hidden="true">
+        <defs>
+          <radialGradient id="halo"><stop offset="0" stop-color="#ff3a20" stop-opacity=".85"/><stop offset=".45" stop-color="#ff2a10" stop-opacity=".3"/><stop offset="1" stop-color="#ff2a10" stop-opacity="0"/></radialGradient>
+          <radialGradient id="reflexo"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+          <radialGradient id="borda"><stop offset=".83" stop-color="#000" stop-opacity="0"/><stop offset=".93" stop-color="#000" stop-opacity=".4"/><stop offset=".985" stop-color="#000" stop-opacity="1"/></radialGradient>
+          <filter id="aceso" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="janela" clipPathUnits="userSpaceOnUse"><polygon id="vidroRet"/></clipPath>
+        </defs>
+        <g id="desenhoRet"></g>
+      </svg>
+      <svg id="luneta" aria-hidden="true" style="display:none"><g id="lunetaDentro"></g></svg>
+      <div class="sobre" id="marca"></div>
+      <div class="sobre" id="barra"><span id="carga"></span></div>
+      <div class="sobre" id="mensagem" role="status"></div>
+      <div class="sobre caixa" id="placar"></div>
+      <div class="sobre caixa" id="canto"><span id="nomeArma"></span><span id="municao"></span></div>
+      <button type="button" id="ativarSom">🔊 Ligar o som</button>
+      <div class="sobre caixa" id="convite">Clique na tela para controlar. Esc solta o mouse.</div>
+    </div>
+    <footer><p id="aviso" role="status"></p><p id="ajuda" class="nota" style="margin:0"></p></footer>
+  </section>
+  <aside class="painel">
+    <div id="conteudo">
+      <button type="button" class="larga" id="demo">▶ Demonstração automática</button>
+      <div class="so-arena">
+        <label class="rotulo" for="camera">Câmera (tecla V troca)</label>
+        <select id="camera"></select>
+        <label class="rotulo" for="cenario">Situação</label>
+        <select id="cenario"></select>
+        <label class="rotulo" for="estadoJogador">Como o sobrevivente começa (<b id="condicao"></b>)</label>
+        <select id="estadoJogador"></select>
+        <div class="botoes">
+          <button type="button" id="empurrarTela">Empurrar (F)</button><button type="button" id="esquivarTela">Esquivar (espaço)</button>
+          <button type="button" id="pisarTela">Pisar (E)</button><button type="button" id="dormir">Dormir</button>
+        </div>
+        <button type="button" class="larga" id="recomecar">↻ Recomeçar a luta</button>
+        <label class="marcar"><input id="avisoVisual" type="checkbox" checked> Ajuda visual: zumbi pisca antes de atacar</label>
+        <p class="nota"><b>Clique</b>: golpear (segure: golpe forte) · <b>botão direito</b>: defender, na hora certa ele cambaleia · <b>F</b>: empurrar · <b>espaço + direção</b>: esquivar · <b>E</b>: pisar em quem caiu. <b>Agarrado:</b> clique repetidamente e use WASD para arrastar o zumbi.</p>
+      </div>
+      <label class="marcar so-estande"><input id="todas" type="checkbox"> Na demonstração, passar por todas as armas</label>
+      <label class="rotulo" for="arma">Arma</label>
+      <select id="arma"></select>
+      <label class="rotulo" for="peca_mira">Mira</label>
+      <select id="peca_mira"></select>
+      <label class="rotulo" for="peca_ponta">Ponta</label>
+      <select id="peca_ponta"></select>
+      <label class="rotulo" for="peca_baixo">Embaixo</label>
+      <select id="peca_baixo"></select>
+      <label class="rotulo" for="peca_carregador">Carregador</label>
+      <select id="peca_carregador"></select>
+      <div class="botoes">
+        <button type="button" id="atirarTela">Atirar</button><button type="button" id="mirarTela">Mirar</button>
+        <button type="button" id="recarregarTela">Recarregar</button><button type="button" id="golpeTela">Golpe rápido</button>
+      </div>
+      <label class="marcar"><input id="somLigado" type="checkbox" checked> Som</label>
+      <label class="rotulo" for="volume">Volume</label>
+      <input id="volume" type="range" min="0" max="1" step="0.05" value="0.7">
+      <label class="marcar"><input id="noite" type="checkbox"> Noite (para ver a lanterna e o clarão)</label>
+      <label class="rotulo" for="ritmo">Velocidade (baixe para câmera lenta)</label>
+      <input id="ritmo" type="range" min="0.2" max="1" step="0.1" value="1">
+      <label class="rotulo" for="sensibilidade">Sensibilidade do mouse</label>
+      <input id="sensibilidade" type="range" min="0.3" max="2.5" step="0.1" value="1">
+      <p class="nota">Teclado: <b>WASD</b> anda, <b>Shift</b> corre, <b>R</b> recarrega, <b>F</b> golpe, <b>Espaço</b> atira, <b>Q/E</b> ou a rodinha trocam de arma, <b>setas</b> olham.</p>
+    </div>
+  </aside>
+</main>
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/quimicos.js"></script>
+<script src="js/armas.js"></script>
+<script src="js/armas-fogo.js"></script>
+<script src="js/armas-detalhes.js"></script>
+<script src="js/armas-extras.js"></script>
+<script src="js/armas-mods.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/animacao.js"></script>
+<script src="js/maos.js"></script>
+<script src="js/locomocao.js"></script>
+<script src="js/zumbi.js"></script>
+<script src="js/validar.js"></script>
+<script src="js/primeira.js"></script>
+<script src="js/miras.js"></script>
+<script src="js/bracos.js"></script>
+<script src="js/som.js"></script>
+<script src="js/combate.js"></script>
+<script src="js/terceira.js"></script>
+<script src="js/arena.js"></script>
+<script src="js/efeitos.js"></script>
+<script src="js/estande.js"></script>
+</body>
+</html>

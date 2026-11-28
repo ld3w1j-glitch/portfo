@@ -33,7 +33,11 @@ function criarVisor(canvas){
       const c = rgb(f.cor).map(v => v / 255);
       for (const i of [0, 1, 2, 0, 2, 3]){ d.set(f.v[i], o); d.set(f.n, o + 3); d.set(c, o + 6); o += 9; }
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, d, gl.STATIC_DRAW); total = quads.length * 6;
+    carregarMalha(d, quads.length * 6);
+  }
+  /* o mesmo, com os números já prontos: 9 por vértice (posição, normal, cor). Usado nas animações. */
+  function carregarMalha(d, vertices){
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, d, gl.DYNAMIC_DRAW); total = vertices;
     /* sombra de contato: um quadrado no chão com transparência em círculo */
     const s = [], R = .52;
     for (const [x, z] of [[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]]) s.push(x * R, .001, z * R * .75, 0, 1, 0, x, z, 0);
@@ -92,5 +96,5 @@ function criarVisor(canvas){
     canvas.width = antes[0]; canvas.height = antes[1]; desenhar();
     return url;
   }
-  return {carregar, desenhar, ajustar, imagem, cam};
+  return {carregar, carregarMalha, desenhar, ajustar, imagem, cam};
 }

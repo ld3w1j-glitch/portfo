@@ -227,7 +227,9 @@ const Animacao = (() => {
       dados.push({nome:p.nome, v, no, inicio:o}); o += n * 3;
     }
     const matriz = q => { const [x, y, z, w] = q; return [1 - 2*(y*y + z*z), 2*(x*y - z*w), 2*(x*z + y*w), 2*(x*y + z*w), 1 - 2*(x*x + z*z), 2*(y*z - x*w), 2*(x*z - y*w), 2*(y*z + x*w), 1 - 2*(x*x + y*y)]; };
-    return {total, cor, pos, nor, atualizar(rot){
+    /* livre = não encostar o pé no chão: o desenho fica em volta da junta do quadril (pulos e escaladas).
+       Devolve a altura do pé mais baixo em relação ao quadril. */
+    return {total, cor, pos, nor, atualizar(rot, livre){
       const g = globais(rot); let chao = 1e9;
       for (const d of dados){
         const m = matriz(g[d.nome].q), [px, py, pz] = g[d.nome].pos, v = d.v, no = d.no, ini = d.inicio;
@@ -239,9 +241,10 @@ const Animacao = (() => {
           nor[ini+i] = m[0]*e + m[1]*f + m[2]*h; nor[ini+i+1] = m[3]*e + m[4]*f + m[5]*h; nor[ini+i+2] = m[6]*e + m[7]*f + m[8]*h;
         }
       }
-      if (chao < 1e8) for (let i = 1; i < pos.length; i += 3) pos[i] -= chao;      /* o pé mais baixo encosta no chão */
+      if (!livre && chao < 1e8) for (let i = 1; i < pos.length; i += 3) pos[i] -= chao;      /* o pé mais baixo encosta no chão */
+      return chao;
     }};
   }
 
-  return {globais, esqueleto, parado, mirar, passada, misturar, daPose, animador, classeDaArma, origemDaArma, pontoDaPeca};
+  return {globais, esqueleto, parado, mirar, passada, misturar, daPose, animador, classeDaArma, origemDaArma, pontoDaPeca, braco, punhoPara};
 })();

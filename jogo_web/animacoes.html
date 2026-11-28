@@ -16,6 +16,22 @@
   select{width:100%;font:inherit;background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:9px;margin-bottom:20px}
   .faixa input{width:100%;accent-color:var(--laranja);margin-bottom:20px}
   .nota{color:var(--cinza);font-size:13px}
+  .marca{display:flex;gap:9px;align-items:center;margin:0 0 12px;cursor:pointer}
+  .marca input{width:18px;height:18px;accent-color:var(--laranja)}
+  .cruz{display:grid;grid-template-columns:repeat(3,52px);gap:6px;justify-content:center;margin:0 0 16px}
+  .cruz button{height:46px;background:var(--grafite);color:inherit;border:1px solid var(--linha);font:700 18px Inter,system-ui,sans-serif;cursor:pointer;touch-action:none;user-select:none}
+  .cruz button:active{background:var(--laranja);color:var(--grafite)}
+  [hidden]{display:none!important}
+  .palco{position:relative}
+  #leitura{position:absolute;left:14px;right:14px;top:108px;max-width:560px;background:rgba(23,23,26,.86);color:#f5f5ef;padding:10px 14px;border-left:6px solid #8f939b;font-size:14px;pointer-events:none;z-index:2}
+  #leitura b{display:block;font-size:16px}
+  #leitura.verde{border-color:#2fbf55}#leitura.vermelho{border-color:#d6392b}#leitura.amarelo{border-color:#e8b81e}
+  @media(max-width:900px){#leitura{font-size:12px;padding:6px 10px;top:104px}#leitura b{font-size:13px}}
+  .corda{border:1px solid var(--linha);padding:10px;margin:0 0 14px}
+  .corda legend{font-weight:700;padding:0 6px}
+  #dor{position:absolute;inset:0;pointer-events:none;z-index:1;opacity:0;background:radial-gradient(ellipse at center,transparent 42%,rgba(150,12,6,.85) 100%)}
+  #saude{display:block;margin-top:3px;color:#ffb4a8;font-weight:700}
+  .larga{display:block;width:100%;background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:12px;font:700 15px Inter,system-ui,sans-serif;cursor:pointer;margin:0 0 12px;touch-action:none;user-select:none}
   @media(max-width:900px){.app{grid-template-columns:1fr}}
 </style>
 </head>
@@ -26,6 +42,8 @@
       <h1>Ver <span>animações</span></h1>
       <div class="modelos"><a class="abrir-cenario" href="inicio.html">← Todas as ferramentas</a></div>
     </header>
+    <div id="leitura" role="status" hidden></div>
+    <div id="dor" aria-hidden="true"></div>
     <canvas id="visor" tabindex="0" aria-label="Personagem em movimento. Arraste para girar e role para aproximar."></canvas>
     <footer>
       <div class="vistas">
@@ -41,10 +59,56 @@
     <div id="conteudo">
       <span class="rotulo">Movimento</span>
       <div class="lista" id="modos"></div>
+      <div id="daobst">
+        <label class="rotulo" for="obstaculo">Obstáculo</label>
+        <select id="obstaculo"></select>
+        <button type="button" class="larga" id="repetir">↻ Repetir este obstáculo</button>
+        <button type="button" class="larga" id="saltar">Pular / agarrar (barra de espaço)</button>
+        <button type="button" class="larga" id="usarcorda">Usar a corda (tecla F)</button>
+        <div class="cruz" aria-label="Setas para controlar o personagem">
+          <span></span><button type="button" data-obst="w" aria-label="Para a frente ou subir">↑</button><span></span>
+          <button type="button" data-obst="a" aria-label="Para a esquerda">←</button><button type="button" data-obst="s" aria-label="Para trás ou soltar">↓</button><button type="button" data-obst="d" aria-label="Para a direita">→</button>
+        </div>
+        <label class="marca"><input id="correndo2" type="checkbox"> Correr (ou segure Shift)</label>
+        <fieldset class="corda"><legend>Ferimento (no controle manual)</legend>
+          <button type="button" class="larga" id="tratar">Tratar ferimento (tecla T)</button>
+          <button type="button" class="larga" id="maismat">+ madeira e kit (para testar)</button>
+          <p class="nota">Atadura: 3 panos (perna machucada). Tala: 3 panos e 2 madeiras (serve também para fratura). Kit médico serve para os dois.</p>
+          <p class="nota" id="remedios" role="status"></p>
+        </fieldset>
+        <fieldset class="corda"><legend>Corda (no controle manual)</legend>
+          <select id="qualcorda" aria-label="Corda na mão"></select>
+          <label class="rotulo" for="panos">Panos para fazer corda: <output id="dapano"></output></label>
+          <div class="faixa"><input id="panos" type="range" min="2" value="8"></div>
+          <button type="button" class="larga" id="fazercorda">Fazer corda de pano</button>
+          <button type="button" class="larga" id="maispano">+ 10 panos (para testar)</button>
+          <p class="nota" id="mochila" role="status"></p>
+        </fieldset>
+        <p class="nota" style="margin-bottom:20px">Borda <b>verde</b>: ele consegue usar. <b>Vermelha</b>: não dá. <b>Amarela</b>: passa por baixo. Para controlar: WASD ou setas, <b>Espaço</b> pula ou agarra, <b>C</b> abaixa. Pendurado: W sobe, S solta, A/D anda de lado.</p>
+      </div>
+      <div id="dapista">
+        <label class="rotulo" for="roteiro">Caminho da pista</label>
+        <select id="roteiro"></select>
+        <div class="cruz" aria-label="Setas para controlar o personagem">
+          <span></span><button type="button" data-tecla="w" aria-label="Para a frente">↑</button><span></span>
+          <button type="button" data-tecla="a" aria-label="Para a esquerda">←</button><button type="button" data-tecla="s" aria-label="Para trás">↓</button><button type="button" data-tecla="d" aria-label="Para a direita">→</button>
+        </div>
+        <label class="marca"><input id="correndo" type="checkbox"> Correr (ou segure Shift)</label>
+        <label class="marca"><input id="antes" type="checkbox"> Mostrar como era antes</label>
+        <p class="nota" style="margin-bottom:20px">A seta laranja é para onde você manda ir. Os pontinhos são o caminho que o personagem fez.</p>
+      </div>
       <label class="rotulo" for="arma">Arma na mão</label>
       <select id="arma"></select>
       <label class="rotulo" for="roupa">Roupa</label>
       <select id="roupa"></select>
+      <fieldset class="corda"><legend>O que ele carrega</legend>
+        <label class="marca"><input id="usamochila" type="checkbox" checked> Com mochila</label>
+        <label class="rotulo" for="nacintura">Arma pequena na cintura</label>
+        <select id="nacintura"></select>
+        <label class="rotulo" for="nascostas">Outra arma grande</label>
+        <select id="nascostas"></select>
+        <p class="nota" id="carga" role="status"></p>
+      </fieldset>
       <label class="rotulo faixa" for="ritmo">Velocidade do movimento</label>
       <div class="faixa"><input id="ritmo" type="range" min="0.2" max="1.5" step="0.1" value="1"></div>
       <p class="nota">Arraste o personagem para girar. Deixe a velocidade baixa para olhar cada passo.</p>
@@ -69,36 +133,104 @@
 <script src="js/modelo.js"></script>
 <script src="js/animacao.js"></script>
 <script src="js/maos.js"></script>
+<script src="js/locomocao.js"></script>
 <script src="js/zumbi.js"></script>
 <script src="js/validar.js"></script>
 <script src="js/visor.js"></script>
+<script src="js/pista.js"></script>
+<script src="js/parkour.js"></script>
+<script src="js/rapel.js"></script>
+<script src="js/coldre.js"></script>
+<script src="js/saude.js"></script>
+<script src="js/obstaculos.js"></script>
 <script>
-const MODOS = {parado:'Parado', andar:'Andando', correr:'Correndo', mirar:'Mirando'};
+const MODOS = {obstaculos:'Obstáculos', pista:'Pista (virando)', parado:'Parado', andar:'Andando', correr:'Correndo', mirar:'Mirando'};
 const ROUPAS_TESTE = {salvo:'Meu último do criador', soldado:'Soldado', sobrevivente:'Sobrevivente', saqueador:'Saqueador', casual:'Roupa casual'};
 const visor = criarVisor(document.getElementById('visor'));
+document.getElementById('visor').addEventListener('pointerdown', () => { girouNaMao = true; });
 const $ = id => document.getElementById(id);
-let modo = 'andar', modelo = null, animador = null, atual = null, fase = 0, mexe = 1, corre = 0, anterior = 0;
+let canela = null, guardadas = null, carga = null, livre = null, camAntes = null, modo = 'andar', modelo = null, animador = null, atual = null, fase = 0, mexe = 1, corre = 0, anterior = 0;
 
 function personagem(){
   const roupa = $('roupa').value; let c = null;
   if (roupa === 'salvo'){ try { const s = localStorage.getItem('wo-criador-personagem'); if (s) c = validar(JSON.parse(s)); } catch (e){} }
   if (!c){ c = structuredClone(PADRAO_WASHINGTON); if (KITS[roupa]) aplicarKit(c, roupa); }
   c.lapis.usa = false; c.arma.estilo = $('arma').value;
-  modelo = montar(c); refazer();
+  const comMochila = $('usamochila').checked;
+  c.mochila.estilo = comMochila ? (c.mochila.estilo !== 'nenhum' ? c.mochila.estilo : 'militar') : 'nenhum';
+  carga = Coldre.arrumar({mao:c.arma.estilo, cintura:$('nacintura').value, costas:$('nascostas').value}, comMochila);
+  modelo = montar(c);
+  c.arma.estilo = 'nenhum'; const semArma = montar(c);
+  livre = {modelo:semArma, animador:Animacao.animador(semArma), parado:Animacao.parado(semArma.arma, semArma.mods)};
+  const semBolsa = structuredClone(c); semBolsa.mochila.estilo = 'nenhum';
+  guardadas = Coldre.montarGuardadas(carga.itens, Coldre.medir(semArma, montar(semBolsa), comMochila), {[$('arma').value]:modelo.mods});
+  canela = Coldre.envolve(semArma, 'canela_d');
+  verCarga();
+  Obstaculos.iniciar(-livre.animador.atualizar(livre.parado, true));
+  refazer();
 }
 /* a mão de apoio muda entre segurar e mirar, então o desenho é refeito ao trocar */
 function refazer(){ animador = Animacao.animador(modelo, modo === 'mirar' ? (Animacao.classeDaArma(modelo.arma) === 'curta' ? 'mirando_uma' : 'mirando') : 'andando'); }
-/* transforma o instante atual do animador no formato que o visor desenha */
-function quadros(){
-  const q = [], p = animador.pos, n = animador.nor, k = animador.cor;
-  const hex = v => Math.round(v * 255).toString(16).padStart(2, '0');
-  /* as cores não mudam: calculadas só na primeira vez de cada personagem */
-  if (!animador.cores) animador.cores = Array.from({length:animador.total / 6}, (_, j) => '#' + hex(k[j * 18]) + hex(k[j * 18 + 1]) + hex(k[j * 18 + 2]));
-  for (let i = 0; i < animador.total; i += 6){
-    const v = j => [p[(i + j) * 3], p[(i + j) * 3 + 1], p[(i + j) * 3 + 2]];
-    q.push({v:[v(0), v(1), v(2), v(5)], n:[n[i * 3], n[i * 3 + 1], n[i * 3 + 2]], cor:animador.cores[i / 6]});
+/* junta o chão (quando há) e o personagem, girado para o rumo, num bloco só: rápido o bastante para cada quadro */
+let malha = new Float32Array(0);
+function mostrar(rumo = 0, cenario = [], sombra = true, quem = animador, dx = 0, dy = 0, dz = 0){
+  const total = quem.total + cenario.length * 6, p = quem.pos, n = quem.nor, k = quem.cor;
+  if (malha.length !== total * 9) malha = new Float32Array(total * 9);
+  const c = Math.cos(rumo), s = Math.sin(rumo); let o = 0;
+  for (const f of cenario){
+    const cor = rgb(f.cor);
+    for (const i of [0, 1, 2, 0, 2, 3]){ const v = f.v[i]; malha[o++] = v[0]; malha[o++] = v[1]; malha[o++] = v[2]; malha[o++] = f.n[0]; malha[o++] = f.n[1]; malha[o++] = f.n[2]; malha[o++] = cor[0] / 255; malha[o++] = cor[1] / 255; malha[o++] = cor[2] / 255; }
   }
-  return q;
+  for (let i = 0, j = 0; i < quem.total; i++, j += 3){
+    malha[o++] = p[j] * c + p[j + 2] * s + dx; malha[o++] = p[j + 1] + dy; malha[o++] = p[j + 2] * c - p[j] * s + dz;
+    malha[o++] = n[j] * c + n[j + 2] * s; malha[o++] = n[j + 1]; malha[o++] = n[j + 2] * c - n[j] * s;
+    malha[o++] = k[j]; malha[o++] = k[j + 1]; malha[o++] = k[j + 2];
+  }
+  visor.carregarMalha(malha, total); visor.desenhar(sombra);
+}
+/* um quadro da pista de obstáculos. Fora do chão (e abaixado) ele guarda a arma para usar as mãos */
+function quadroObstaculos(dt){
+  const arma = modelo.arma, daMao = carga.itens.find(i => i.daMao);
+  const parado = {rot:Animacao.parado(arma, modelo.mods), arma, mods:modelo.mods, livre:livre.parado, coldre:daMao && {lugar:daMao.lugar, medidas:guardadas.medidas}};
+  const s = Obstaculos.passo(dt, {giro:visor.cam.giro, correr:$('correndo2').checked}, parado), e = Obstaculos.estado();
+  const naMao = !!arma && e.naMao, quem = naMao ? animador : livre.animador;
+  const pe = quem.atualizar(s.rot, true), onde = Obstaculos.assentarDesenho(dt, s.yQuadril, pe);
+  /* o curativo aparece enrolando na perna e fica nela */
+  const remedio = e.trata?.remedio || e.ferimento?.remedio || e.ultimoCurativo;
+  const noCorpo = {...guardadas, correias:guardadas.correias.concat(Saude.curativo(canela, remedio, e.curativo))};
+  mostrar(onde.rumo, Obstaculos.cena(), false, Coldre.juntar(quem, noCorpo, s.rot, naMao), onde.x, onde.y, onde.z);
+  /* a tela avermelha no impacto, e as bordas latejam enquanto o ferimento não é tratado */
+  if (e.impactoNovo > 6) dorForte = Math.min(e.modo === 'caido' ? 1 : .32, (e.impactoNovo - 5) / 5);   /* sem ferimento, só um aviso leve */
+  dorForte *= Math.exp(-dt * 2.2);
+  const lateja = e.ferimento && !e.ferimento.tratado ? (e.ferimento.tipo === 'grave' ? .32 : .18) * (.7 + .3 * Math.sin(performance.now() / 260)) : 0;
+  $('dor').style.opacity = Math.max(dorForte, lateja).toFixed(2);
+  cameraDaCorda(dt, e);
+  if ($('obstaculo').value !== Obstaculos.escolha()) $('obstaculo').value = Obstaculos.escolha();
+  if (JSON.stringify(Obstaculos.mochila) !== mochilaVista) verMochila();
+  /* nas demonstrações altas a câmera se afasta */
+  if (Obstaculos.escolha() !== 'manual'){ const longe = Obstaculos.LISTA[Obstaculos.atual()].camera || 7.2; if (Math.abs(visor.cam.dist - longe) > .05 && Obstaculos.afastou !== longe){ visor.cam.dist = longe; Obstaculos.afastou = longe; } }
+  const l = Obstaculos.leitura(), html = '<b>' + l.nome + ' · ' + l.agora + '</b>À frente: ' + l.frente + (l.saude ? '<span id="saude">' + l.saude + '</span>' : '');
+  if ($('leitura').dataset.html !== html){ $('leitura').dataset.html = html; $('leitura').innerHTML = html; $('leitura').className = l.cor; }
+}
+/* na corda a câmera vai para trás e um pouco de lado, para ver o movimento; depois volta. Se você girar, ela obedece */
+let dorForte = 0, girouNaMao = false, estavaNaCorda = false, obstaculoVisto = -1;
+function cameraDaCorda(dt, e){
+  if (obstaculoVisto !== Obstaculos.atual()){ obstaculoVisto = Obstaculos.atual(); girouNaMao = false; }
+  const naCorda = e.modo === 'corda' && e.rapel.fase !== 'guarda';
+  if (naCorda) estavaNaCorda = true;
+  if (girouNaMao || !estavaNaCorda) return;
+  const manual = Obstaculos.escolha() === 'manual';
+  const alvo = naCorda ? e.rumo + Math.PI + .72 * Math.sign(Math.cos(e.rumo) || 1) : manual ? Math.PI : -1.25;
+  const falta = Math.atan2(Math.sin(alvo - visor.cam.giro), Math.cos(alvo - visor.cam.giro));
+  visor.cam.giro += falta * (1 - Math.exp(-2.4 * dt));
+  if (!naCorda && Math.abs(falta) < .02) estavaNaCorda = false;
+}
+/* o que não coube é explicado */
+function verCarga(){
+  const comMochila = $('usamochila').checked, onde = {cinturaD:'cintura, lado direito', cinturaE:'cintura, lado esquerdo', ladoD:'lado direito da mochila', ladoE:'lado esquerdo da mochila', costas:'pendurada nas costas'};
+  const linhas = carga.itens.map(i => ARMAS[i.id].nome + (i.daMao ? ' (na mão; guardada vai para ' : ' (') + onde[i.lugar] + ')');
+  for (const s of carga.sobras) linhas.push('Não coube: ' + ARMAS[s.id].nome + ', ' + s.motivo + '.');
+  $('carga').textContent = linhas.length ? linhas.join(' · ') : (comMochila ? 'Com mochila: até duas armas grandes.' : 'Sem mochila: uma arma grande.');
 }
 function pose(){
   const arma = modelo.arma, chega = (v, alvo, dt) => v + (alvo - v) * Math.min(1, dt * 6);
@@ -110,6 +242,16 @@ function pose(){
 function passo(agora){
   const dt = anterior ? Math.min(.05, (agora - anterior) / 1000) : .016; anterior = agora;
   const ritmo = Number($('ritmo').value), chega = (v, alvo) => v + (alvo - v) * Math.min(1, dt * 6);
+  if (modo === 'obstaculos'){
+    quadroObstaculos(dt * ritmo); requestAnimationFrame(passo); return;
+  }
+  if (modo === 'pista'){
+    const arma = modelo.arma, s = Pista.passo(dt * ritmo, {giro:visor.cam.giro, correr:$('correndo').checked, antes:$('antes').checked}, Animacao.parado(arma, modelo.mods), arma, modelo.mods);
+    if ($('roteiro').value !== Pista.roteiro()) $('roteiro').value = Pista.roteiro();
+    animador.atualizar(s.rot); atual = s.rot;
+    mostrar(s.rumo, Pista.chao(), false);
+    requestAnimationFrame(passo); return;
+  }
   const andando = modo === 'andar' || modo === 'correr';
   mexe = chega(mexe, andando ? 1 : 0); corre = chega(corre, modo === 'correr' ? 1 : 0);
   /* mesmo compasso do mapa: velocidade dividida pelo tamanho da passada */
@@ -117,15 +259,87 @@ function passo(agora){
   const alvo = pose();
   atual = atual ? Animacao.misturar(atual, alvo, Math.min(1, dt * (andando && mexe > .97 ? 60 : 10))) : alvo;
   animador.atualizar(atual);
-  visor.carregar(quadros()); visor.desenhar();
+  mostrar();
   requestAnimationFrame(passo);
 }
 function botoes(){
   $('modos').replaceChildren(...Object.entries(MODOS).map(([id, nome]) => {
     const b = document.createElement('button'); b.type = 'button'; b.textContent = nome; b.dataset.modo = id;
-    b.className = id === modo ? 'ativo' : ''; b.addEventListener('click', () => { modo = id; refazer(); botoes(); }); return b;
+    b.className = id === modo ? 'ativo' : ''; b.addEventListener('click', () => trocarModo(id)); return b;
   }));
+  $('dapista').hidden = modo !== 'pista';
+  $('daobst').hidden = $('leitura').hidden = modo !== 'obstaculos';
+  if (modo !== 'obstaculos') $('dor').style.opacity = 0;
 }
+/* a pista olha de mais alto; ao sair, a câmera volta para onde estava */
+function trocarModo(id){
+  if (id === 'pista' && modo !== 'pista'){ if (modo !== 'obstaculos') camAntes = {...visor.cam}; Object.assign(visor.cam, {giro:-.5, elev:.46, dist:7, alvo:.7}); Pista.reiniciar(); }
+  else if (id === 'obstaculos' && modo !== 'obstaculos'){ if (modo !== 'pista') camAntes = {...visor.cam}; Object.assign(visor.cam, {giro:-1.25, elev:.2, dist:7.2, alvo:1.28}); Obstaculos.recomecar(); }
+  else if (id !== 'pista' && id !== 'obstaculos' && (modo === 'pista' || modo === 'obstaculos')){ Object.assign(visor.cam, camAntes || {giro:-.9, elev:.14, dist:4.6, alvo:.9}); mexe = 0; }
+  Pista.soltarTudo(); Obstaculos.soltarTudo();
+  modo = id; refazer(); botoes();
+}
+for (const [id, r] of Object.entries(Pista.ROTEIROS)) $('roteiro').add(new Option(r.nome, id));
+$('roteiro').addEventListener('change', () => { Pista.escolher($('roteiro').value); $('roteiro').blur(); });
+/* teclado: na pista, WASD e setas movem o personagem (e não a câmera) */
+const TECLAS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'];
+addEventListener('keydown', ev => {
+  const k = ev.key.toLowerCase(); if (ev.ctrlKey || ev.metaKey) return;
+  if (modo === 'obstaculos' && (TECLAS.includes(k) || k === ' ' || k === 'c' || k === 'f' || k === 't')){
+    if (k !== 'shift'){ ev.preventDefault(); ev.stopPropagation(); }
+    if (!ev.repeat) assumir(k);
+  } else if (modo === 'pista' && TECLAS.includes(k)){
+    if (k !== 'shift'){ ev.preventDefault(); ev.stopPropagation(); }
+    Pista.aperta(k);
+  }
+}, true);
+/* a barra de espaço não pode "clicar" no botão que ficou selecionado */
+addEventListener('keyup', ev => { const k = ev.key.toLowerCase(); if (k === ' ' && modo === 'obstaculos') ev.preventDefault(); Pista.solta(k); Obstaculos.solta(k); }, true);
+addEventListener('blur', () => { Pista.soltarTudo(); Obstaculos.soltarTudo(); });
+$('obstaculo').add(new Option('Todos, um por um', 'todos'));
+for (const p of Obstaculos.LISTA) $('obstaculo').add(new Option(p.nome, p.id));
+$('obstaculo').add(new Option('Eu controlo (percurso livre)', 'manual'));
+/* quem assume o controle vê o personagem por trás (W vai em frente); as demonstrações são vistas de lado */
+const verPorTras = () => Object.assign(visor.cam, {giro:Math.PI, elev:.36, dist:6.4, alvo:1.05});
+const assumir = tecla => { if (tecla !== 'shift' && Obstaculos.escolha() !== 'manual') verPorTras(); Obstaculos.aperta(tecla); };
+$('obstaculo').addEventListener('change', () => {
+  const v = $('obstaculo').value; Obstaculos.escolher(v); $('obstaculo').blur();
+  if (v === 'manual') verPorTras(); else Object.assign(visor.cam, {giro:-1.25, elev:.2, dist:7.2, alvo:1.28});
+});
+$('repetir').addEventListener('click', () => { Obstaculos.recomecar(); $('repetir').blur(); });
+const segurar = (b, tecla) => {
+  const solta = () => Obstaculos.solta(tecla);
+  b.addEventListener('pointerdown', ev => { b.setPointerCapture(ev.pointerId); assumir(tecla); });
+  b.addEventListener('pointerup', solta); b.addEventListener('pointercancel', solta); b.addEventListener('lostpointercapture', solta);
+};
+segurar($('saltar'), ' ');
+segurar($('usarcorda'), 'f');
+segurar($('tratar'), 't');
+$('maismat').addEventListener('click', () => { Obstaculos.mochila.madeira += 2; Obstaculos.mochila.kit += 1; $('maismat').blur(); });
+/* ---- a mochila do controle manual */
+function verMochila(aviso = ''){
+  const m = Obstaculos.mochila, n = v => v.toFixed(1).replace('.', ',');
+  const opcoes = [['nenhuma', 'Sem corda'], ...(m.temMilitar ? [['militar', 'Corda militar · ' + n(Rapel.AJUSTES.maxima) + ' m · não gasta']] : []), ...(m.pano ? [['pano', 'Corda de pano · ' + n(m.pano.metros) + ' m · uma vez só']] : [])];
+  $('qualcorda').replaceChildren(...opcoes.map(([v, t]) => new Option(t, v))); $('qualcorda').value = m.escolhida;
+  $('panos').max = Rapel.maximoDePanos();
+  $('dapano').textContent = $('panos').value + ' = ' + n(Rapel.metrosDe(Number($('panos').value))) + ' m';
+  const texto = aviso || 'Na mochila: ' + m.panos + ' panos' + (m.pano ? ' e 1 corda de pano.' : '.');
+  $('mochila').textContent = texto;
+  $('remedios').textContent = 'Você tem: ' + m.panos + ' panos, ' + m.madeira + ' madeiras e ' + m.kit + ' kit(s) médico(s).';
+  mochilaVista = JSON.stringify(m);
+}
+let mochilaVista = '';
+$('panos').addEventListener('input', () => verMochila());
+$('qualcorda').addEventListener('change', () => { Obstaculos.mochila.escolhida = $('qualcorda').value; $('qualcorda').blur(); verMochila(); });
+$('fazercorda').addEventListener('click', () => { const r = Rapel.fazer(Obstaculos.mochila, Number($('panos').value)); verMochila(typeof r === 'string' ? 'Não deu: ' + r + '.' : ''); $('fazercorda').blur(); });
+$('maispano').addEventListener('click', () => { Obstaculos.mochila.panos += 10; verMochila(); $('maispano').blur(); });
+verMochila();
+document.querySelectorAll('[data-obst]').forEach(b => segurar(b, b.dataset.obst));
+document.querySelectorAll('[data-tecla]').forEach(b => {
+  const solta = () => Pista.solta(b.dataset.tecla);
+  b.addEventListener('pointerdown', ev => { b.setPointerCapture(ev.pointerId); Pista.aperta(b.dataset.tecla); });
+  b.addEventListener('pointerup', solta); b.addEventListener('pointercancel', solta); b.addEventListener('lostpointercapture', solta);
+});
 $('arma').add(new Option('Sem arma', 'nenhum'));
 for (const [t, titulo] of Object.entries(TIPOS_ARMA)){
   const g = document.createElement('optgroup'); g.label = titulo;
@@ -134,12 +348,15 @@ for (const [t, titulo] of Object.entries(TIPOS_ARMA)){
 }
 for (const [id, nome] of Object.entries(ROUPAS_TESTE)) $('roupa').add(new Option(nome, id));
 $('roupa').value = 'soldado';
+$('nacintura').add(new Option('Nenhuma', 'nenhum')); $('nascostas').add(new Option('Nenhuma', 'nenhum'));
+for (const [id, a] of Object.entries(ARMAS)) (Coldre.tamanho(id) === 'pequena' ? $('nacintura') : $('nascostas')).add(new Option(a.nome, id));
+for (const campo of ['usamochila', 'nacintura', 'nascostas']) $(campo).addEventListener('change', () => { personagem(); atual = null; $(campo).blur(); });
 $('arma').addEventListener('change', () => { personagem(); atual = null; });
 $('roupa').addEventListener('change', () => { personagem(); atual = null; });
 document.querySelectorAll('[data-giro]').forEach(b => b.addEventListener('click', () => { visor.cam.giro = Number(b.dataset.giro); }));
 botoes();
 if (!visor) $('aviso').textContent = 'Este navegador não conseguiu abrir o desenho em 3D (WebGL).';
-else { personagem(); Object.assign(visor.cam, {giro:-.9, elev:.14, dist:4.6, alvo:.9}); requestAnimationFrame(passo); }
+else { personagem(); Object.assign(visor.cam, {giro:-.9, elev:.14, dist:4.6, alvo:.9}); trocarModo('obstaculos'); requestAnimationFrame(passo); }
 </script>
 </body>
 </html>
