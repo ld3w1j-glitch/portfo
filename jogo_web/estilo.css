@@ -1,0 +1,48 @@
+:root{--grafite:#1A1A1A;--grafite2:#262626;--grafite3:#333;--offwhite:#F5F5EF;--cinza:#C9C9C4;--laranja:#F16A32;--linha:rgba(245,245,239,.16)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--grafite);color:var(--offwhite);font:14px/1.45 Inter,system-ui,"Segoe UI",sans-serif}
+button,select,input{font:inherit;color:inherit}
+button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid var(--laranja);outline-offset:2px}
+h1,.rotulo,#abas button,.modelos button,.vistas button,.acao{font-family:"Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.04em}
+.app{display:grid;grid-template-columns:1fr 420px;height:100vh}
+.palco{display:flex;flex-direction:column;min-width:0;min-height:0}
+.palco header,.palco footer{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:14px 18px}
+.palco header{justify-content:space-between}
+h1{font-size:28px;font-weight:900;line-height:1}h1 span{color:var(--laranja)}
+.modelos,.vistas{display:flex;flex-wrap:wrap;gap:8px}
+.modelos button,.vistas button{background:var(--grafite2);border:1px solid var(--linha);padding:7px 14px;font-weight:700;cursor:pointer}
+.modelos button:hover,.vistas button:hover{border-color:var(--laranja)}
+.abrir-cenario{background:var(--laranja);color:var(--grafite);padding:7px 14px;text-decoration:none;font:700 14px 'Barlow Condensed','Arial Narrow',sans-serif;text-transform:uppercase;letter-spacing:.04em}
+.abrir-cenario.zumbis{background:#6F8F4E}
+canvas{flex:1;width:100%;min-height:0;touch-action:none;cursor:grab;background:radial-gradient(ellipse at 50% 38%,#EDEDEF 0,#D4D5D8 60%,#BFC1C6 100%)}
+canvas:active{cursor:grabbing}
+.pose select{background:var(--grafite2);border:1px solid var(--linha);padding:7px 10px;margin-left:6px}
+#aviso{color:var(--laranja);min-height:1.4em}
+.painel{display:flex;flex-direction:column;background:var(--grafite2);border-left:1px solid var(--linha);min-height:0}
+#abas{display:flex;flex-wrap:wrap;gap:6px;padding:14px 16px;border-bottom:1px solid var(--linha)}
+#abas button{background:none;border:1px solid var(--linha);padding:7px 11px;font-weight:700;font-size:15px;cursor:pointer}
+#abas button.ativo{background:var(--laranja);border-color:var(--laranja);color:var(--grafite)}
+#conteudo{overflow:auto;padding:16px 16px 40px;flex:1}
+.campo{display:block;margin-bottom:20px}
+.rotulo{display:block;font-size:15px;color:var(--cinza);margin-bottom:8px}
+.escolhas{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.escolhas button{background:var(--grafite);border:1px solid var(--linha);padding:10px 8px;cursor:pointer}
+.escolhas button.ativo{border:2px solid var(--laranja);padding:9px 7px;color:var(--laranja);font-weight:600}
+.cores{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.amostra{width:30px;height:30px;border:2px solid var(--linha);cursor:pointer}
+.amostra.ativo{border-color:var(--offwhite);box-shadow:0 0 0 2px var(--laranja)}
+input[type=color]{width:44px;height:32px;background:var(--grafite);border:1px solid var(--linha);cursor:pointer}
+input[type=text]{width:100%;background:var(--grafite);border:1px solid var(--linha);padding:9px 10px}
+.grupos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.grupos button{background:none;border:1px solid var(--linha);padding:5px 9px;font-size:12.5px;cursor:pointer}
+.grupos button.ativo{background:var(--laranja);border-color:var(--laranja);color:var(--grafite);font-weight:700}
+.escolhas + .tirar{width:100%;margin-top:8px;background:none;border:1px dashed var(--linha);padding:8px;cursor:pointer;color:var(--cinza)}
+.tirar:hover{border-color:var(--laranja);color:var(--offwhite)}
+.divisa{border-top:1px solid var(--linha);margin:4px 0 18px}
+.chave{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-weight:600;cursor:pointer}
+.chave input{width:18px;height:18px;accent-color:var(--laranja)}
+.acao{width:100%;background:var(--grafite);border:1px solid var(--linha);padding:11px;font-weight:700;font-size:16px;cursor:pointer;margin-bottom:20px}
+.acao:hover{border-color:var(--laranja)}
+.acao.principal{background:var(--laranja);color:var(--grafite);border-color:var(--laranja)}
+.exporta .acao{margin-bottom:6px}.exporta p{color:var(--cinza);font-size:12.5px;margin-bottom:20px}
+@media(max-width:900px){.app{grid-template-columns:1fr;height:auto}canvas{height:62vh;flex:none}.painel{border-left:0}#conteudo{overflow:visible}}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Gerador de mundo</title>
+<link rel="stylesheet" href="estilo.css">
+<style>
+.app{grid-template-columns:1fr 380px}
+.tela{position:relative;flex:1;min-height:0;display:flex}
+#visor{background:linear-gradient(#9CC8EC,#DCEAF2 62%,#E9E6DA)}
+#mapa{position:absolute;left:12px;bottom:12px;width:200px;height:200px;border:2px solid var(--grafite);cursor:crosshair;image-rendering:pixelated}
+#norte{position:absolute;left:18px;bottom:190px;font:700 12px Inter,system-ui,sans-serif;color:#fff;text-shadow:0 0 3px #000;pointer-events:none}
+#carregando{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(26,26,26,.82);font-size:18px;text-align:center;padding:20px}
+#carregando[hidden]{display:none}
+#dica{position:absolute;left:12px;top:10px;right:12px;font-size:12.5px;background:rgba(26,26,26,.72);padding:6px 10px;width:fit-content;max-width:calc(100% - 24px);pointer-events:none}
+#info{font-size:12.5px;color:var(--cinza);margin-left:auto}
+.faixa{display:block;margin-bottom:16px}.faixa input{width:100%;accent-color:var(--laranja)}.faixa span{display:flex;justify-content:space-between;color:var(--cinza);font-size:13px}
+.tres{grid-template-columns:1fr 1fr 1fr}.tres button{font-size:12.5px}
+.materiais button{display:flex;align-items:center;gap:8px;text-align:left}.materiais i{width:16px;height:16px;flex:none;border:1px solid var(--linha)}
+.nota{color:var(--cinza);font-size:12.5px;margin:-8px 0 18px}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dupla .acao{font-size:14px;padding:9px 4px}
+.veredito{margin:0 0 16px;padding:10px 12px;border:2px solid #4C8A3C;font-weight:700}.veredito.ruim{border-color:var(--laranja)}.veredito span{display:block;font-weight:400;font-size:12.5px;color:var(--cinza)}
+.achados{display:grid;gap:6px}.achados+.nota{margin-top:8px}.achados button{text-align:left;font-size:12.5px;background:transparent;color:inherit;border:1px solid var(--linha);padding:7px 9px;cursor:pointer}.achados button:hover{border-color:var(--laranja)}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;margin:-4px 0 18px}.legenda span{display:flex;align-items:center;gap:6px}.legenda i,.achados i{display:inline-block;width:12px;height:12px;flex:none;border:1px solid var(--linha)}
+.achados i{margin-right:7px;vertical-align:-2px}
+.ficha{border:1px solid var(--linha);padding:12px 12px 4px;margin-bottom:18px}.ficha .resumo{font-size:12.5px;color:var(--cinza);margin:0 0 10px}.ficha .dupla{margin-bottom:12px}.ficha .achados{margin:6px 0 10px;grid-template-columns:1fr 1fr}
+.ficha select{width:100%;font:inherit;background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:7px}
+#abas button{padding-left:4px;padding-right:4px;font-size:12.5px}
+@media(max-width:900px){.app{grid-template-columns:1fr}.tela{flex:none;height:62vh}.tela canvas#visor{height:100%}#mapa{width:110px;height:110px}#norte{bottom:100px}#dica{display:none}}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="palco" aria-label="Mundo">
+    <header>
+      <h1>Gerador de <span>mundo</span></h1>
+      <div class="modelos">
+        <button type="button" id="caminhar">🚶 Caminhar</button>
+        <a class="abrir-cenario" href="index.html" target="wo-criador">Personagens ↗</a>
+        <a class="abrir-cenario" href="cenario.html" target="wo-cenario">Cenários ↗</a>
+        <a class="abrir-cenario" href="garagem.html" target="wo-garagem">Garagem ↗</a>
+      </div>
+    </header>
+    <div class="tela">
+      <canvas id="visor" tabindex="0" aria-label="Terreno em 3D"></canvas>
+      <p id="dica"></p>
+      <canvas id="mapa" width="200" height="200" aria-label="Mapa visto de cima. Clique para ir até o ponto."></canvas>
+      <span id="norte">▲ N</span>
+      <div id="carregando">Preparando o terreno…</div>
+    </div>
+    <footer>
+      <div class="vistas">
+        <button type="button" data-vista="bairro">Ver o bairro</button>
+        <button type="button" data-vista="cima">De cima</button>
+        <button type="button" data-vista="perto">De perto</button>
+        <button type="button" data-vista="tudo">Mapa todo</button>
+      </div>
+      <p id="aviso" role="status"></p>
+      <p id="info"></p>
+    </footer>
+    <p style="font-size:11px;color:var(--cinza);padding:4px 14px 8px">Relevo: SRTM data courtesy of the U.S. Geological Survey. Ruas e rios: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">© colaboradores do OpenStreetMap</a> (ODbL).</p>
+  </section>
+  <aside class="painel">
+    <nav id="abas" role="tablist" aria-label="Opções do mundo"></nav>
+    <div id="conteudo"></div>
+  </aside>
+</main>
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/zumbi.js"></script>
+<script src="js/validar.js"></script>
+<script src="js/exportar.js"></script>
+<script src="js/veiculos.js"></script>
+<script src="js/viaturas.js"></script>
+<script src="js/blindagem.js"></script>
+<script src="dados-mundo/relevo-bairro.js"></script>
+<script src="dados-mundo/ruas-bairro.js"></script>
+<script src="js/mundo-nucleo.js"></script>
+<script src="js/mundo-carros.js"></script>
+<script src="js/mundo-casas.js"></script>
+<script src="js/mundo-objetos.js"></script>
+<script src="js/mundo-passeio.js"></script>
+<script src="js/mundo-conferir.js"></script>
+<script src="js/mundo-territorios.js"></script>
+<script src="js/mundo-pacote.js"></script>
+<script src="js/mundo.js"></script>
+</body>
+</html>

@@ -62,7 +62,7 @@ PROJETOS = [
 
     # ---------- jogo ----------
     _p("criadores", "jogo", "Criadores de personagem, cenário e zumbi",
-       "Programas próprios, que rodam no computador sem internet, para criar as peças do jogo.",
+       "Programas próprios, que rodam no navegador, para criar as peças do jogo. Funcionam melhor no computador.",
        ["Personagem com 21 cortes de cabelo, 21 roupas, óculos, chapéus e equipamentos",
         "Montador de cenários com casas, natureza, rua, móveis e veículos",
         "15 zumbis prontos e sorteio de novos", "Exportação em 3D e em imagem"],
@@ -71,6 +71,8 @@ PROJETOS = [
               ("zumbis-prontos.webp", "Zumbis"), ("itens.webp", "Itens de cenário"),
               ("exemplo-horda.webp", "Horda na rua"), ("exemplo-esquina.webp", "Esquina abandonada"),
               ("exemplo-acampamento.webp", "Acampamento")],
+       links=[("Criar personagem", "jogo", "index.html"), ("Criar zumbi", "jogo", "zumbis.html"),
+              ("Montar cenário", "jogo", "cenario.html"), ("Todas as ferramentas", "jogo")],
        situacao="Em desenvolvimento"),
     _p("garagem", "jogo", "Garagem de veículos",
        "Carros, motos e bicicletas em voxel, montados em partes separadas.",
@@ -78,6 +80,7 @@ PROJETOS = [
         "Motos, bicicletas, ferrugem e armaduras de apocalipse"],
        fotos=[("carros-na-rua-enferrujado.webp", "Carro enferrujado na rua"), ("carros-estados.webp", "Estados"),
               ("blindados.webp", "Armaduras"), ("motos.webp", "Motos"), ("bicicletas.webp", "Bicicletas")],
+       links=[("Abrir a garagem", "jogo", "garagem.html")],
        situacao="Em desenvolvimento"),
     _p("mundo", "jogo", "Gerador de mundo e territórios",
        "O cenário de um jogo de sobrevivência num apocalipse zumbi, inspirado num bairro de Pouso Alegre, em Minas Gerais. "
@@ -91,6 +94,7 @@ PROJETOS = [
               ("povo-caminhando.webp", "Caminhando"), ("interior-caminhando.webp", "Dentro das casas"),
               ("interior-sem-telhado.webp", "Sem os telhados"), ("territorios-bairro.webp", "Zonas e territórios"),
               ("unity-bairro.webp", "No Unity"), ("unity-dentro-da-casa.webp", "Dentro de uma casa no Unity")],
+       links=[("Abrir o gerador de mundo", "jogo", "mundo.html")],
        situacao="Em desenvolvimento"),
 ]
 

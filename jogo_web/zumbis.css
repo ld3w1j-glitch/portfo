@@ -1,0 +1,9 @@
+/* ajustes do criador de zumbis, por cima de estilo.css */
+body.zumbis{--laranja:#8DB35C}
+body.zumbis canvas{background:radial-gradient(ellipse at 50% 38%,#7FC4F2 0,#5AA9E6 55%,#3C7FBF 100%)}
+body.zumbis .modelos button{background:var(--grafite2);border:1px solid var(--linha);padding:7px 14px;cursor:pointer}
+body.zumbis .modelos .abrir-cenario{background:var(--grafite2);color:var(--offwhite);border:1px solid var(--linha)}
+.quatro-colunas{grid-template-columns:repeat(4,1fr)!important}
+.quatro-colunas button{font-size:12.5px;padding:9px 2px!important}
+select.lista{width:100%;background:var(--grafite);border:1px solid var(--linha);padding:9px 10px}
+.dica{color:var(--cinza);font-size:12.5px;margin-bottom:14px}

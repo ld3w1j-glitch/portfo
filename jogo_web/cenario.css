@@ -1,0 +1,42 @@
+/* Montador de cenários (usa as cores e os controles de estilo.css) */
+body.montador{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topo{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--linha)}
+.topo h1{font-size:24px}
+.grupo{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.topo select,.topo button,.botao{background:var(--grafite2);border:1px solid var(--linha);padding:6px 10px;cursor:pointer;color:var(--offwhite);text-decoration:none}
+.topo button:hover,.botao:hover{border-color:var(--laranja)}
+.marca{display:flex;gap:6px;align-items:center;cursor:pointer}.marca input{accent-color:var(--laranja)}
+.mesa{flex:1;display:grid;grid-template-columns:292px 1fr 272px;min-height:0}
+.biblioteca,.lateral{display:flex;flex-direction:column;background:var(--grafite2);min-height:0}
+.biblioteca{border-right:1px solid var(--linha);padding:12px 12px 0}
+.lateral{border-left:1px solid var(--linha);overflow:auto;padding:14px}
+.biblioteca input[type=text]{margin-bottom:10px}
+#categorias{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+#categorias button{background:none;border:1px solid var(--linha);padding:4px 8px;font-size:12px;cursor:pointer}
+#categorias button.ativo{background:var(--laranja);border-color:var(--laranja);color:var(--grafite);font-weight:700}
+#itens{flex:1;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start;padding-bottom:14px}
+.cartao{background:var(--grafite);border:1px solid var(--linha);padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;text-align:center}
+.cartao:hover{border-color:var(--laranja)}
+.cartao img{width:100%;aspect-ratio:132/100;background:#DADBDE}
+.cartao.texto{min-height:54px;justify-content:center;font-size:13px}
+.arquivo{grid-column:1/-1;display:block;font-size:12px;color:var(--cinza)}.arquivo input{display:block;margin-top:6px;max-width:100%;font-size:12px}
+.palco-cena{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+#cena{flex:1;width:100%;min-height:0;touch-action:none;cursor:grab;background:#9CC8EC}
+.sobre{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:12px;align-items:center;pointer-events:none}
+.sobre .vistas{pointer-events:auto}
+.sobre button{background:rgba(26,26,26,.86)}
+.sobre #aviso:not(:empty){background:rgba(26,26,26,.86);padding:6px 10px}
+.atalhos{font-size:11.5px;color:var(--cinza);padding:6px 10px;border-top:1px solid var(--linha)}
+.lateral h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;font-size:19px;margin-bottom:10px;line-height:1.1}
+.dica{color:var(--cinza);font-size:12.5px;margin-bottom:12px}
+.quatro{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.mini{background:var(--grafite);border:1px solid var(--linha);padding:7px;cursor:pointer;font-size:13px}
+.mini:hover{border-color:var(--laranja)}.mini.perigo:hover{border-color:#E0563C;color:#FF8A70}
+.linha{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;margin-bottom:10px;font-size:12.5px}
+.linha input[type=range]{width:100%;accent-color:var(--laranja);min-width:0}
+.linha select{background:var(--grafite);border:1px solid var(--linha);padding:5px;grid-column:2/-1}
+.linha input[type=color]{grid-column:2/-1;width:100%}
+.lateral .acao{margin-bottom:8px;font-size:15px;padding:9px}
+.exportar{border-top:1px solid var(--linha);margin-top:16px;padding-top:14px}
+.exportar .marca{font-size:12.5px;margin-bottom:10px}
+@media(max-width:980px){body.montador{height:auto;overflow:auto}.mesa{grid-template-columns:1fr}.palco-cena{order:-1}#cena{height:62vh;flex:none}#itens{max-height:360px}.biblioteca,.lateral{border:0}}

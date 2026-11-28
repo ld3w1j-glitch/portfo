@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Montador de cenários</title>
+<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="cenario.css">
+</head>
+<body class="montador">
+<header class="topo">
+  <h1>Montador de <span>cenários</span></h1>
+  <div class="grupo">
+    <select id="exemplos" aria-label="Exemplos prontos"></select>
+    <label>Chão <select id="chao"></select></label>
+    <label>Luz <select id="luz"></select></label>
+    <label>Encaixe <select id="encaixe"><option value="0.25">25 cm</option><option value="0.5">50 cm</option><option value="1">1 m</option><option value="0.05">5 cm</option><option value="0">Livre</option></select></label>
+    <label class="marca"><input type="checkbox" id="grade"> Grade</label>
+  </div>
+  <div class="grupo">
+    <button type="button" id="desfazer" title="Ctrl+Z">↶ Desfazer</button>
+    <button type="button" id="refazer" title="Ctrl+Y">↷ Refazer</button>
+    <button type="button" id="limpar">Limpar</button>
+    <a class="botao" href="index.html" target="wo-criador">Criador de personagem ↗</a>
+    <a class="botao" href="garagem.html" target="wo-garagem">Garagem ↗</a><a class="botao" href="zumbis.html" target="wo-zumbis">Criador de zumbis ↗</a>
+  </div>
+</header>
+<main class="mesa">
+  <aside class="biblioteca" aria-label="Biblioteca de itens">
+    <input type="text" id="busca" placeholder="Procurar item…" aria-label="Procurar item">
+    <nav id="categorias" aria-label="Categorias"></nav>
+    <div id="itens"></div>
+  </aside>
+  <section class="palco-cena" aria-label="Cenário">
+    <canvas id="cena" tabindex="0" aria-label="Cenário em 3D. Arraste um item para mover. Arraste o fundo para girar a câmera."></canvas>
+    <div class="sobre">
+      <div class="vistas">
+        <button type="button" data-vista="0.62,0.5">3/4</button>
+        <button type="button" data-vista="0,0.2">Frente</button>
+        <button type="button" data-vista="1.5708,0.2">Lado</button>
+        <button type="button" data-vista="0,1.5">De cima</button>
+      </div>
+      <p id="aviso" role="status"></p>
+    </div>
+    <p class="atalhos">Arraste um item para mover · arraste o fundo para girar a vista · botão direito ou Shift: deslizar · rodinha: aproximar · R: girar item · setas: ajustar · Ctrl+D: duplicar · Delete: apagar</p>
+  </section>
+  <aside class="lateral">
+    <div id="selecionado"></div>
+    <div class="exportar">
+      <h2>Salvar e exportar</h2>
+      <p id="contagem" class="dica"></p>
+      <label class="marca"><input type="checkbox" id="exp-chao" checked> Incluir o chão no 3D</label>
+      <button type="button" class="acao principal" id="exp-glb">Baixar GLB (3D)</button>
+      <button type="button" class="acao" id="exp-obj">Baixar OBJ + MTL</button>
+      <button type="button" class="acao" id="exp-png">Baixar imagem PNG</button>
+      <button type="button" class="acao" id="salvar">Salvar cenário</button>
+      <label class="arquivo">Abrir um cenário salvo <input type="file" id="abrir" accept=".json,application/json"></label>
+    </div>
+  </aside>
+</main>
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/zumbi.js"></script>
+<script src="js/validar.js"></script>
+<script src="js/exportar.js"></script>
+<script src="js/cenario-itens.js"></script>
+<script src="js/faccoes-cena.js"></script>
+<script src="js/policia-cena.js"></script>
+<script src="js/veiculos.js"></script>
+<script src="js/viaturas.js"></script>
+<script src="js/blindagem.js"></script>
+<script src="js/duas-rodas.js"></script>
+<script src="js/cenario.js"></script>
+</body>
+</html>

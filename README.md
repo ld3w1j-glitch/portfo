@@ -41,7 +41,7 @@ projeto-wo/
 └─ tests/                 test_rotas.py · test_marca.py
 ```
 
-Rotas: `/` · `/acervo` · `/manual` · `/marca/tokens.json` · `/marca/tokens.css` · `/simulador-reforma` · `/guia-logos` · `/gerador-pecas` · `/biblioteca-elementos` · `/healthz` · `/robots.txt` · `/sitemap.xml`.
+Rotas: `/` · `/jogo/` · `/acervo` · `/manual` · `/marca/tokens.json` · `/marca/tokens.css` · `/simulador-reforma` · `/guia-logos` · `/gerador-pecas` · `/biblioteca-elementos` · `/healthz` · `/robots.txt` · `/sitemap.xml`.
 Os endereços antigos (`/portfolio.html` etc.) redirecionam para os novos.
 
 ## Rodar no seu computador
@@ -66,6 +66,7 @@ Abra http://localhost:3000. Para recarregar templates sozinho: `$env:FLASK_DEBUG
 | Quero mudar | Arquivo |
 |---|---|
 | Cartões de projetos na página inicial | `static/js/home/dados/projetos.js` |
+| Ferramentas do jogo (`/jogo/`) | edite em `producao/customizador` e rode `python ferramentas/montar_jogo.py` (a pasta `jogo_web/` é gerada) |
 | Página `/acervo` (tudo o que foi desenvolvido) | `acervo.py` · imagens e vídeos em `static/acervo/` |
 | Textos dos cards (serviços, sobre, DNA) | `static/js/home/dados/servicos.js` |
 | Capítulos e vídeos do filme | `static/js/home/dados/filme.js` |

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Criador de zumbis</title>
+<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="zumbis.css">
+</head>
+<body class="zumbis">
+<main class="app">
+  <section class="palco" aria-label="Zumbi">
+    <header>
+      <h1>Criador de <span>zumbis</span></h1>
+      <div class="modelos">
+        <button type="button" id="sortear">🎲 Sortear</button>
+        <button type="button" id="desfazer">↶ Desfazer</button>
+        <a class="abrir-cenario" href="index.html" target="wo-criador">Personagens ↗</a>
+        <a class="abrir-cenario" href="cenario.html" target="wo-cenario">Cenários ↗</a>
+        <a class="abrir-cenario" href="garagem.html" target="wo-garagem">Garagem ↗</a>
+      </div>
+    </header>
+    <canvas id="visor" tabindex="0" aria-label="Visor 3D. Arraste para girar, role para aproximar, use as setas do teclado."></canvas>
+    <footer>
+      <div class="vistas">
+        <button type="button" data-vista="0,0.1,4.5,0.92">Frente</button>
+        <button type="button" data-vista="0.6,0.14,4.5,0.92">3/4</button>
+        <button type="button" data-vista="1.5708,0.08,4.5,0.92">Lado</button>
+        <button type="button" data-vista="3.1416,0.12,4.5,0.92">Costas</button>
+        <button type="button" data-vista="0.3,0.06,1.9,1.55">Rosto</button>
+        <button type="button" data-vista="0.5,0.5,4.6,0.45">De cima</button>
+      </div>
+      <label class="pose">Pose <select id="poses"></select></label>
+      <p id="aviso" role="status"></p>
+    </footer>
+  </section>
+  <aside class="painel">
+    <nav id="abas" role="tablist" aria-label="Partes do zumbi"></nav>
+    <div id="conteudo"></div>
+  </aside>
+</main>
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/zumbi.js"></script>
+<script src="js/validar.js"></script>
+<script src="js/visor.js"></script>
+<script src="js/exportar.js"></script>
+<script src="js/zumbi-app.js"></script>
+</body>
+</html>

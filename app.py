@@ -20,6 +20,7 @@ import marca
 
 RAIZ = Path(__file__).resolve().parent
 PAGINAS = RAIZ / "paginas"
+JOGO = RAIZ / "jogo_web"
 
 # páginas feitas por scripts em ferramentas/ (ficam fora dos templates porque são geradas)
 PAGINAS_GERADAS = {
@@ -87,6 +88,12 @@ def registrar_rotas(app):
     @app.get("/acervo")
     def projetos_acervo():
         return render_template("acervo/index.html", grupos=acervo.por_grupo(), creditos=acervo.CREDITOS_MAPA)
+
+    # ferramentas do jogo (pasta gerada por ferramentas/montar_jogo.py)
+    @app.get("/jogo/")
+    @app.get("/jogo/<path:arquivo>")
+    def jogo(arquivo="inicio.html"):
+        return send_from_directory(JOGO, arquivo)
 
     @app.get("/manual")
     def manual():

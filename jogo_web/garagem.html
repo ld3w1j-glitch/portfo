@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Garagem</title>
+<link rel="stylesheet" href="estilo.css">
+<style>
+.medidas{width:100%;border-collapse:collapse;font-size:13px}
+.medidas th,.medidas td{text-align:left;padding:5px 0;border-bottom:1px solid var(--linha);font-weight:400}
+.medidas th{color:var(--cinza)}.medidas td{text-align:right;font-weight:600}
+.nota{color:var(--cinza);font-size:12.5px;margin:-10px 0 20px}
+select.cheio{width:100%;background:var(--grafite);border:1px solid var(--linha);padding:9px 10px}
+</style>
+</head>
+<body class="garagem">
+<main class="app">
+  <section class="palco" aria-label="Veículo">
+    <header>
+      <h1>Minha <span>garagem</span></h1>
+      <div class="modelos">
+        <a class="abrir-cenario" href="index.html" target="wo-criador">Personagens ↗</a>
+        <a class="abrir-cenario" href="cenario.html" target="wo-cenario">Cenários ↗</a>
+        <a class="abrir-cenario zumbis" href="zumbis.html" target="wo-zumbis">Zumbis ↗</a>
+      </div>
+    </header>
+    <canvas id="visor" tabindex="0" aria-label="Visor 3D do veículo. Arraste para girar, role para aproximar, use as setas do teclado."></canvas>
+    <footer>
+      <div class="vistas">
+        <button type="button" data-vista="0.65,0.28">3/4</button>
+        <button type="button" data-vista="0,0.08">Frente</button>
+        <button type="button" data-vista="1.5708,0.04">Lado</button>
+        <button type="button" data-vista="3.1416,0.2">Traseira</button>
+        <button type="button" data-vista="1.5708,1.45">De cima</button>
+        <button type="button" data-vista="1.5708,-1.45">Por baixo</button>
+      </div>
+      <p id="aviso" role="status"></p>
+    </footer>
+  </section>
+  <aside class="painel">
+    <div id="conteudo"></div>
+  </aside>
+</main>
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/zumbi.js"></script>
+<script src="js/validar.js"></script>
+<script src="js/exportar.js"></script>
+<script src="js/veiculos.js"></script>
+<script src="js/viaturas.js"></script>
+<script src="js/blindagem.js"></script>
+<script src="js/duas-rodas.js"></script>
+<script src="js/garagem.js"></script>
+</body>
+</html>

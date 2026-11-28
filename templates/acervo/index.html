@@ -29,7 +29,7 @@
           <ul>{% for item in p.itens %}<li>{{ item }}</li>{% endfor %}</ul>
           {% if p.links %}
           <div class="ac-links">
-            {% for texto, rota in p.links %}<a class="btn cut-sm" href="{{ url_for(rota) }}">{{ texto }} →</a>{% endfor %}
+            {% for link in p.links %}<a class="btn cut-sm" href="{% if link|length > 2 %}{{ url_for(link[1], arquivo=link[2]) }}{% else %}{{ url_for(link[1]) }}{% endif %}">{{ link[0] }} →</a>{% endfor %}
           </div>
           {% endif %}
         </header>
