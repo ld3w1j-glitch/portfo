@@ -15,7 +15,9 @@ const punho_ = (b, mat, u = 0, topo = .9, alt = 4.4, larg = .62) => { for (let i
 /* guarda do gatilho: só o contorno */
 const guarda_ = (b, u, topo, mat) => { b(u + .9, u + 3.2, -.16, .16, topo - 1.75, topo - 1.45, mat); b(u + 2.9, u + 3.2, -.16, .16, topo - 1.75, topo, mat); b(u + 1.7, u + 2, -.14, .14, topo - 1.1, topo, mat); };
 /* carregador curvo (ou reto, com curva = 0) pendurado em u */
-const pente_ = (b, u, topo, n, mat, curva = .45) => { for (let i = 0; i < n; i++){ const d = curva * i * i * .28; b(u + d, u + 2.1 + d, -.55, .55, topo - (i + 1) * 1.35, topo - i * 1.35 + .02, mat); } const d = curva * (n - 1) * (n - 1) * .28; b(u + d - .2, u + 2.3 + d, -.65, .65, topo - n * 1.35 - .4, topo - n * 1.35, 'a_ferro'); };
+const pente_ = (b, u, topo, n, mat, curva = .45) => noPente(() => { for (let i = 0; i < n; i++){ const d = curva * i * i * .28; b(u + d, u + 2.1 + d, -.55, .55, topo - (i + 1) * 1.35, topo - i * 1.35 + .02, mat); } const d = curva * (n - 1) * (n - 1) * .28; b(u + d - .2, u + 2.3 + d, -.65, .65, topo - n * 1.35 - .4, topo - n * 1.35, 'a_ferro'); });
+/* o pente das pistolas fica por dentro do cabo: só a base aparece até ele sair */
+const penteNoCabo_ = (b, u, topo, alt, mat) => noPente(() => { for (let i = 0; i < 4; i++){ const w1 = topo - i * alt / 4; b(u - .8 - i * .42, u + .6 - i * .42, -.4, .4, w1 - alt / 4 - .01, w1 - .05, mat); } });
 /* luneta com as duas lentes */
 const mira_ = (b, u0, u1, w, mat) => {
   b(u0, u1, -.55, .55, w - .55, w + .55, mat); for (const [a, c] of [[u0 - 1.4, u0 + .4], [u1 - .4, u1 + 1.6]]) b(a, c, -.82, .82, w - .82, w + .82, mat);
@@ -33,7 +35,7 @@ Object.assign(ARMAS, {
     for (let u = -1.7; u < .2; u += .48) b(u, u + .2, -.68, .68, 2.2, 3.3, 'a_ferro');
     b(2.2, 4.2, .62, .68, 2.7, 3.25, 'a_metal'); b(6.6, 7.1, -.32, .32, 2.45, 3.1, 'a_preto');
     b(5.6, 6.1, -.18, .18, 3.5, 3.95, 'a_preto'); b(-1.7, -1.1, -.45, .45, 3.5, 3.95, 'a_preto');
-    punho_(b, 'a_polimero', 0, 1.1, 4.2); b(-3.1, -.7, -.66, .66, -3.5, -3.05, 'a_aco_escuro'); b(-1.7, -.2, .62, .72, -1.9, .1, 'a_preto');
+    punho_(b, 'a_polimero', 0, 1.1, 4.2); penteNoCabo_(b, 0, 1.1, 4.2, 'a_ferro'); noPente(() => b(-3.1, -.7, -.66, .66, -3.5, -3.05, 'a_aco_escuro')); b(-1.7, -.2, .62, .72, -1.9, .1, 'a_preto');
     guarda_(b, 0, 1.05, 'a_polimero');
   }},
   revolver:{nome:'Revólver', tipo:'militar', longa:false, desenhar(b){
@@ -93,7 +95,7 @@ Object.assign(ARMAS, {
     b(9, 16.4, -.85, .85, 1.9, 3.9, 'a_aco_escuro'); for (let u = 9.8; u < 15.8; u += 1.3) b(u, u + .6, -.92, .92, 2.35, 3.5, 'a_ferro');
     b(16.4, 25.6, -.46, .46, 2.5, 3.4, 'a_ferro'); b(25.6, 27.4, -.65, .65, 2.3, 3.6, 'a_preto');
     punho_(b, 'a_polimero', 0, 1.15, 4.4); guarda_(b, 0, 1.1, 'a_aco_escuro');
-    b(3.4, 8.4, -2.1, 2.1, -3.6, 1.1, 'a_verde_mil'); b(3.6, 8.2, -2.25, 2.25, -2.2, -1.5, 'a_preto'); for (let u = 4; u < 7.8; u += .75) b(u, u + .42, 1, 1.5, 1.1, 2.4, 'a_latao');
+    noPente(() => { b(3.4, 8.4, -2.1, 2.1, -3.6, 1.1, 'a_verde_mil'); b(3.6, 8.2, -2.25, 2.25, -2.2, -1.5, 'a_preto'); }); for (let u = 4; u < 7.8; u += .75) b(u, u + .42, 1, 1.5, 1.1, 2.4, 'a_latao');
     b(-14, -4.4, -.5, .5, 2.2, 3.4, 'a_ferro'); b(-14, -8.4, -.62, .62, -.2, 2.2, 'a_polimero'); b(-15, -14, -.72, .72, -.6, 3.8, 'a_preto');
     for (const u of [-1, 5]) b(u, u + .7, -.22, .22, 4.8, 6.6, 'a_preto'); b(-1, 5.7, -.34, .34, 6.2, 7, 'a_polimero');
     for (const s of [-1, 1]){ b(18.6, 19.4, ...[s * .46, s * 2.2].sort((p, q) => p - q), 1.4, 2.5, 'a_ferro'); b(18.7, 19.3, ...[s * 1.9, s * 2.5].sort((p, q) => p - q), -3, 1.6, 'a_ferro'); }
@@ -109,7 +111,7 @@ Object.assign(ARMAS, {
     b(-1.9, 4.2, -.75, .75, .9, 2.4, 'a_tabua'); b(-1.2, 2.2, -.55, .55, 2.4, 2.9, 'a_madeira2');
     b(1, 4.6, -.45, .45, 2.5, 3.35, 'a_ferro'); b(4.6, 7.8, -.45, .45, 2.8, 3.65, 'a_ferrugem'); b(7.8, 8.4, -.62, .62, 2.6, 3.85, 'a_metal');   /* cano em dois pedaços, desalinhado */
     atadura_(b, 1.4, 2.5, .75, .9, 3.35); atadura_(b, 3.3, 4, .75, .9, 3.35, 'a_preto'); atadura_(b, 5.4, 6, .45, 2.8, 3.65);
-    punho_(b, 'a_madeira2', .1, 1, 3.9, .7); atadura_(b, -2.6, -.5, .7, -2.2, -1.1, 'a_preto'); atadura_(b, -2.1, -.1, .7, -.6, -.1);
+    punho_(b, 'a_madeira2', .1, 1, 3.9, .7); penteNoCabo_(b, .1, 1, 3.9, 'a_ferrugem'); noPente(() => b(-2.9, -.6, -.6, .6, -3.3, -2.9, 'a_ferro')); atadura_(b, -2.6, -.5, .7, -2.2, -1.1, 'a_preto'); atadura_(b, -2.1, -.1, .7, -.6, -.1);
     parafuso_(b, -.9, 1.4, .75); parafuso_(b, 2.7, 1.2, .75); b(.4, 3, .75, .9, 1.9, 2.1, 'a_corda'); b(6.6, 7, -.12, .12, 3.65, 4.5, 'a_aco');
     b(1.5, 1.9, -.14, .14, -.4, .9, 'a_ferrugem'); b(-3.4, -1.9, -.2, .2, 1.8, 2.2, 'a_ferro'); b(-3.4, -3, -.2, .2, 2.2, 3.1, 'a_ferro');
   }},
@@ -125,7 +127,7 @@ Object.assign(ARMAS, {
     b(-.8, 3.8, -.18, .18, 3.9, 5.1, 'a_metal'); b(-.8, 3.8, -.5, .5, 4.9, 5.4, 'a_preto');
     b(7.6, 12.4, -.55, .55, 2, 3.1, 'a_metal'); b(12.4, 15.4, -.4, .4, 1.7, 2.65, 'a_ferrugem'); b(15.4, 16.2, -.62, .62, 1.5, 2.85, 'a_ferro');
     atadura_(b, 8.4, 9.4, .55, 2, 3.1); atadura_(b, 12, 13, .55, 1.7, 3.1, 'a_preto');
-    punho_(b, 'a_tabua', 0, 1.1, 4.2); pente_(b, 4.3, 1, 5, 'a_ferro', -.12); atadura_(b, 3.6, 6.4, .6, -2.2, -1.3); atadura_(b, 4.1, 6, .6, .2, 1);
+    punho_(b, 'a_tabua', 0, 1.1, 4.2); pente_(b, 4.3, 1, 5, 'a_ferro', -.12); noPente(() => { atadura_(b, 3.6, 6.4, .6, -2.2, -1.3); atadura_(b, 4.1, 6, .6, .2, 1); });
     b(-9.5, -3.8, -.3, .3, 2.4, 3, 'a_madeira'); b(-10.4, -9.4, -1.1, 1.1, .2, 3.6, 'a_tabua'); atadura_(b, -5.4, -4.4, .3, 2.4, 3);
     b(-6.6, 1.5, -1.12, -1, .4, .9, 'a_mangueira'); b(1, 1.5, -1.12, -.9, .9, 2, 'a_mangueira');
     for (const [u, w] of [[-2.8, 1.5], [2.2, 2.7], [6.2, 1.4]]) parafuso_(b, u, w, .95);
@@ -135,7 +137,7 @@ Object.assign(ARMAS, {
     b(-5, 8, -.7, .7, 1.1, 3, 'a_tabua'); b(-4.2, 5, -.5, .5, 3, 3.6, 'a_madeira2');
     b(8, 13.4, -.75, .75, 1.5, 2.7, 'a_madeira'); b(3.5, 12, -.5, .5, 2.95, 3.85, 'a_ferro'); b(12, 18.6, -.42, .42, 2.7, 3.5, 'a_ferrugem'); b(18.6, 23.4, -.36, .36, 3, 3.7, 'a_metal'); b(23.4, 24.4, -.58, .58, 2.75, 3.95, 'a_ferro');
     atadura_(b, 11.4, 12.8, .75, 1.5, 3.85); atadura_(b, 18, 19.2, .45, 2.7, 3.7, 'a_preto'); atadura_(b, 6.4, 7.4, .72, 1.1, 3.85, 'a_cinta'); atadura_(b, -1.6, -.4, .7, 1.1, 3.6);
-    punho_(b, 'a_madeira2', 0, 1.2, 4.1); pente_(b, 4, 1.1, 4, 'a_verde_mil', .62); atadura_(b, 3.8, 7, .6, -1.9, -1, 'a_preto');
+    punho_(b, 'a_madeira2', 0, 1.2, 4.1); pente_(b, 4, 1.1, 4, 'a_verde_mil', .62); noPente(() => atadura_(b, 3.8, 7, .6, -1.9, -1, 'a_preto'));
     /* coronha de pé de cadeira e um pedaço de tábua pregado */
     b(-13.2, -5, -.38, .38, 2, 2.9, 'a_madeira'); b(-12.8, -6.2, -.34, .34, .1, .9, 'a_madeira2'); b(-14.2, -12.8, -.6, .6, -.5, 3.4, 'a_tabua'); b(-7, -6.2, -.4, .4, .9, 2, 'a_ferro');
     for (const [u, w] of [[-13.8, .3], [-13.8, 2.4], [-3.8, 1.6], [1.6, 1.8], [9.4, 1.8]]) parafuso_(b, u, w, .7);

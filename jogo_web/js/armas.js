@@ -125,6 +125,11 @@ const ARMAS = {
     b(-3.1, -2.5, -2.55, 2.55, 6.55, 7.2, 'a_borracha'); b(-3.35, -2.5, -.9, .9, 6.3, 7.45, 'a_couro'); b(2.1, 3.7, -.68, .68, -2.6, .2, 'a_fita');
   }},
 };
+/* enquanto isto está ligado, os blocos desenhados são do pente (a peça que sai na recarga) */
+const PARTE_ARMA = {pente:false, so:null};
+const noPente = desenho => { const antes = PARTE_ARMA.pente; PARTE_ARMA.pente = true; desenho(); PARTE_ARMA.pente = antes; };
+/* monta só o pente (true) ou a arma sem ele (false) */
+const montandoParte = (so, monta) => { PARTE_ARMA.so = so; try { return monta(); } finally { PARTE_ARMA.so = null; } };
 const TIPOS_ARMA = {pancada:'Pancada', corte:'Corte', longe:'Haste e distância'};
 const NOMES_ARMAS = {nenhum:'Mãos livres', ...Object.fromEntries(Object.entries(ARMAS).map(([k, v]) => [k, v.nome]))};
 for (const p of [PADRAO_WASHINGTON, PADRAO_LIMPO, PADRAO_FEMININO]) Object.assign(p, {arma:{estilo:'nenhum'}, broquel:{usa:false}});
@@ -135,6 +140,7 @@ function armaNaMao(id, cx, desenhar){
   const [ox, oy, oz] = Animacao.origemDaArma(id);                 /* o mesmo ponto usado pelas mãos e pelos braços */
   const A = ARMAS[id];
   (desenhar || A.desenhar)((u0, u1, v0, v1, w0, w1, mat) => {
+    if (PARTE_ARMA.so !== null && PARTE_ARMA.pente !== PARTE_ARMA.so) return;
     if (A.vertical) cx('mao_d', ox + v0, ox + v1, oy - w1, oy - w0, oz + u0, oz + u1, mat);   /* em pé, à frente da mão */
     else cx('mao_d', ox + v0, ox + v1, oy - u1, oy - u0, oz + w0, oz + w1, mat);               /* deitada, apontando para a frente */
   });

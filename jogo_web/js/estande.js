@@ -27,8 +27,9 @@ const Estande = (() => {
   const VS = `attribute vec3 p, n, c; uniform mat4 vp, M; varying vec3 vn, vc, vw;
     void main(){ vec4 w = M * vec4(p, 1.0); vw = w.xyz; vn = mat3(M) * n; vc = c; gl_Position = vp * w; }`;
   const FS = `precision mediump float; varying vec3 vn, vc, vw;
-    uniform vec3 olho, frente, tinta, ceu; uniform float noite, lanterna, clarao, emite, neblina, brilho, alfa;
+    uniform vec3 olho, frente, tinta, ceu; uniform float noite, lanterna, clarao, emite, neblina, brilho, alfa, corte;
     void main(){
+      if (vw.y > corte) discard;
       vec3 n = normalize(vn), sol = normalize(vec3(-0.35, 0.8, -0.45)), d = vw - olho;
       float dist = length(d);
       float dia = 0.56 + 0.14 * n.y + 0.40 * max(dot(n, sol), 0.0);
@@ -47,7 +48,7 @@ const Estande = (() => {
   const sombreador = (tipo, src) => { const s = gl.createShader(tipo); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   const prog = gl.createProgram(); gl.attachShader(prog, sombreador(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sombreador(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
   const AT = ['p', 'n', 'c'].map(a => gl.getAttribLocation(prog, a));
-  const U = Object.fromEntries(['vp', 'M', 'olho', 'frente', 'tinta', 'ceu', 'noite', 'lanterna', 'clarao', 'emite', 'neblina', 'brilho', 'alfa'].map(n => [n, gl.getUniformLocation(prog, n)]));
+  const U = Object.fromEntries(['vp', 'M', 'olho', 'frente', 'tinta', 'ceu', 'noite', 'lanterna', 'clarao', 'emite', 'neblina', 'brilho', 'alfa', 'corte'].map(n => [n, gl.getUniformLocation(prog, n)]));
 
   function malha(quads){
     const d = new Float32Array(quads.length * 54); let o = 0;
@@ -97,7 +98,9 @@ const Estande = (() => {
 
   /* ---------------------------------------------------------------- o estande */
   const solidos = [];                                           /* [x0,x1,y0,y1,z0,z1] que param tiros */
+  const naCena = !!arena?.naCena;
   const cenario = (() => {
+    if (naCena){ solidos.push(...Cena.solidos()); return Cena.terreno(bloco, malha); }
     const q = [];
     for (let x = -12; x < 12; x += 2) for (let z = -6; z < 60; z += 2) q.push({v:[[x,0,z],[x+2,0,z],[x+2,0,z+2],[x,0,z+2]], n:[0,1,0], cor:((x + z) / 2) & 1 ? '#8C8F82' : '#95988A'});
     const solido = (x0, x1, y0, y1, z0, z1, cor) => { bloco(q, x0, x1, y0, y1, z0, z1, cor); solidos.push([x0, x1, y0, y1, z0, z1]); };
@@ -116,7 +119,7 @@ const Estande = (() => {
   })();
 
   /* alvos redondos */
-  const PLACAS = [{x:-3.1, z:10, r:.46}, {x:2.6, z:25, r:.62}, {x:-1.4, z:50, r:.95}].map(p => ({...p, y:1.42}));
+  const PLACAS = typeof Cena === 'object' && Cena.ativa ? Cena.PLACAS : [{x:-3.1, z:10, r:.46}, {x:2.6, z:25, r:.62}, {x:-1.4, z:50, r:.95}].map(p => ({...p, y:1.42}));
   const placas = (() => {
     const q = [], CORES = ['#E9E7DD', '#26262A', '#2F5F9E', '#C0362C', '#E8B81E'];
     for (const p of PLACAS){
@@ -161,7 +164,7 @@ const Estande = (() => {
       const lo = girar(q, tira(o, [z.x, 0, z.z])), ld = girar(q, d);
       for (const [peca, k] of z.caixas){ const r = raioCaixa(lo, ld, k); if (r && r.t < melhor.t) melhor = {t:r.t, tipo:'zumbi', zumbi:z, peca, n:girar(giroDoZumbi(z), r.n)}; }
     }
-    for (const p of arena ? [] : PLACAS){
+    for (const p of arena && !arena.naCena ? [] : PLACAS){
       if (Math.abs(d[2]) < 1e-6) continue;
       const t = (p.z - .01 - o[2]) / d[2]; if (t < 0 || t >= melhor.t) continue;
       const x = o[0] + d[0] * t - p.x, y = o[1] + d[1] * t - p.y, r = Math.hypot(x, y);
@@ -175,7 +178,7 @@ const Estande = (() => {
 
   /* ---------------------------------------------------------------- jogador */
   const jog = {x:0, z:0, rumo:0, olha:0, tranco:0, alto:1.62};
-  const olhoDe = () => [jog.x, jog.alto + (est ? Math.abs(Math.sin(est.passo)) * .028 * est.anda * (1 - est.mira * .8) : 0), jog.z];
+  const olhoDe = () => [jog.x, (jog.y || 0) + jog.alto + (est ? Math.abs(Math.sin(est.passo)) * .028 * est.anda * (1 - est.mira * .8) : 0), jog.z];
   function direcao(){ const v = jog.olha + jog.tranco, c = Math.cos(v); return [Math.sin(jog.rumo) * c, Math.sin(v), Math.cos(jog.rumo) * c]; }
   function base(){ const f = direcao(), direita = unit(cruz(f, [0, 1, 0])), cima = cruz(direita, f); return {f, direita, cima}; }
   /* de um ponto da visão (+X esquerda) para o mundo */
@@ -273,10 +276,15 @@ const Estande = (() => {
     const id = $('arma').value, mods = escolhidas();
     boneco.arma.estilo = id; boneco.modarma = {...(boneco.modarma || SEM_MOD), reforco:'nenhum', pintura:'nenhum', enfeite:'nenhum', ...mods};
     const mira = Miras.criar(id, mods, Primeira.medir(id, mods).boca);
-    const m = semMaos(() => mira && ENCAIXES[id]?.mira ? Miras.semMiraDeVoxel(id, falsa => { boneco.modarma.mira = falsa; const feito = montar(boneco); boneco.modarma.mira = mods.mira; return feito; }) : montar(boneco)), g = Animacao.globais({}), peca = n => m.pecas.find(p => p.nome === n);
+    const montarSo = parte => montandoParte(parte, () => semMaos(() => mira && ENCAIXES[id]?.mira ? Miras.semMiraDeVoxel(id, falsa => { boneco.modarma.mira = falsa; const feito = montar(boneco); boneco.modarma.mira = mods.mira; return feito; }) : montar(boneco)));
+    const comPente = Primeira.COM_PENTE.has(id);
+    const m = montarSo(comPente ? false : null), g = Animacao.globais({}), peca = n => m.pecas.find(p => p.nome === n);
+    /* os blocos do pente, nas coordenadas da mão */
+    const doPente = comPente ? montarSo(true).pecas.find(p => p.nome === 'mao_d').quads : null;
     const reta = (n, quads) => quads.map(q => ({v:q.v.map(v => girar(g[n].q, v)), n:girar(g[n].q, q.n), cor:q.cor}));
-    if (vm) [vm.arma, vm.braco, vm.maoD?.malha, vm.maoE?.malha, vm.flecha, vm.bolsa, vm.bolsaVazia, ...[...(vm.arcos?.values() || [])].map(a => a.malha), ...Object.values(vm.mira || {})].forEach(apagar);
+    if (vm) [vm.arma, vm.pente, vm.pente3?.malha, vm.maoPente?.malha, vm.maoPinca?.malha, vm.braco, vm.maoD?.malha, vm.maoE?.malha, vm.flecha, vm.bolsa, vm.bolsaVazia, ...[...(vm.arcos?.values() || [])].map(a => a.malha), ...Object.values(vm.mira || {})].forEach(apagar);
     const deCorda = id === 'arco' || id === 'estilingue';
+    $('barra').classList.toggle('alta', deCorda);                              /* para não passar na frente da forquilha */
     const C = coresDoBoneco || (coresDoBoneco = Bracos.cores(boneco));
     vm = {
       arma:id === 'nenhum' || deCorda ? null : malha(separar(reta('mao_d', peca('mao_d').quads))),
@@ -289,10 +297,11 @@ const Estande = (() => {
       const forma = id === 'estilingue' ? Bracos.estilingue() : null;
       vm.maoD = comMalha(Bracos.maoDoCabo(C, id === 'arco' ? .0215 : .0178));
       vm.maoE = comMalha(id === 'arco' ? Bracos.maoNaCorda(C) : Bracos.maoNoCouro(C));
-      if (id === 'arco') vm.flecha = malha(Bracos.flecha(.62));
+      if (id === 'arco') vm.flecha = malha(Bracos.flecha(.68));
       else { vm.forma = forma; vm.estilingue = malha(forma.quads); vm.bolsa = malha(Bracos.bolsa(true)); vm.bolsaVazia = malha(Bracos.bolsa(false)); }
     } else pegadas(C, id, mods);
     est = Primeira.criar(id, mods);
+    if (est.f.tipo === 'tiro' && est.f.modo !== 'flecha' && est.f.modo !== 'besta') prepararRecarga(C, doPente, g.mao_d.q, reta);
     if (mira){
       est.medida.mira = mira.h;                         /* a arma sobe até esta linha ficar no centro da tela */
       const g2 = vm.punho, ponto = ([u, v, w]) => mais(g2, naArma(u, v, w)), vira = ([u, v, w]) => vm.vertical ? [v, u, w] : [v, w, u];
@@ -312,6 +321,58 @@ const Estande = (() => {
     $('mirarTela').textContent = est.f.tipo === 'golpe' ? 'Defender' : 'Mirar';
     $('recarregarTela').disabled = est.f.tipo !== 'tiro';
   }
+  /* o pente como peça separada (e a mão que o segura), ou a mão que leva os cartuchos */
+  function prepararRecarga(C, doPente, qMao, reta){
+    const volta = [-qMao[0], -qMao[1], -qMao[2], qMao[3]], porta = mais(vm.punho, naArma(2.2, 1.25, 1.6));
+    vm.porta = porta; vm.porta3 = girar(volta, porta);
+    if (!doPente){ vm.maoPinca = comMalha(Bracos.maoNoCouro(C)); return; }
+    const quads = reta('mao_d', doPente), mn = [9, 9, 9], mx = [-9, -9, -9];
+    for (const f of quads) for (const v of f.v) for (let i = 0; i < 3; i++){ mn[i] = Math.min(mn[i], v[i]); mx[i] = Math.max(mx[i], v[i]); }
+    const c = mn.map((v, i) => (v + mx[i]) / 2), h = mn.map((v, i) => (mx[i] - v) / 2);
+    vm.pente = malha(separar(quads)); vm.penteBox = {c, h};
+    vm.maoPente = comMalha(Bracos.segurando(C, {C:[0, -h[1] * .3, 0], a:[0, 1, 0], n:[1, 0, 0], f:[0, 0, 1], rn:Math.min(.07, h[0] + .003), rf:Math.min(.058, h[2] + .003)}));
+    vm.pente3 = {malha:malha(separar(doPente)), c:girar(volta, c), baixo:girar(volta, [0, -1, 0]), h};
+  }
+  const meioGiro = (a, b, t) => { const s = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3] < 0 ? -1 : 1, q = a.map((v, i) => v + (b[i] * s - v) * t), n = Math.hypot(...q) || 1; return q.map(v => v / n); };
+  /* troca as mãos e o pente de lugar enquanto a arma é recarregada */
+  function recargaNasMaos(r){
+    const p = vm.pente && Primeira.passoDoPente(est), d = r.d;
+    if (p){
+      const {c, h} = vm.penteBox, naArma_ = off => aplica(d.t, d.q, mais(c, off));
+      const lugar = nome => nome === 'arma' ? {t:naArma_([0, 0, 0]), q:d.q} : nome === 'fora' ? {t:naArma_([0, -(h[1] + .055), -.012]), q:d.q}
+        /* perto dos olhos, com a boca virada para quem olha */
+        : nome === 'ver' ? {t:[.075, -.062 + Math.sin(est.tempo * 4) * .004, Math.max(.4, .33 + Math.max(h[1], h[2]))], q:qm(qy(.5 + Math.sin(est.tempo * 3) * .07), qm(qx(-.85), qz(.1)))}
+        : {t:[.17, -.5, .42], q:qm(qx(-.35), d.q)};
+      const a = lugar(p.de), b = lugar(p.ate), centro = a.t.map((v, i) => lerp(v, b.t[i], p.t)), q = meioGiro(a.q, b.q, p.t);
+      r.pente = {t:centro, q, comMunicao:p.novo || !p.vazio, visto:p.u > .13};
+      if (p.vazio && p.ate === 'ver' && vm.avisou !== est.durRecarga){ vm.avisou = est.durRecarga; aviso('Pente vazio', 1.1); }
+      if (p.volta < .6){
+        let mao = centro;
+        if (p.chega < 1) mao = naArma_([0, -.05, .09]).map((v, i) => lerp(v, centro[i], p.chega));
+        else if (p.ate === 'arma' && p.de === 'arma') mao = aplica(centro, q, [0, -.028 * (1 - p.tapa), 0]);
+        r.e = {t:mao, q, mao:vm.maoPente, lado:'e', cotovelo:[.55, -.82, -.16]};
+      }
+    } else if (vm.maoPinca){
+      const k = Primeira.passoDoCartucho(est); if (!k) return r;
+      const porta = aplica(d.t, d.q, vm.porta), t = [.19, -.36, .42].map((v, i) => lerp(v, porta[i], k.k) + (i === 2 ? k.empurra * .02 : 0));
+      r.e = {t, q:d.q, mao:vm.maoPinca, lado:'e', cotovelo:[.55, -.82, -.16]};
+      if (k.naMao) r.cartucho = t;
+    }
+    return r;
+  }
+  /* a boca do pente: com bala aparece o latão; vazio, só o buraco escuro */
+  function desenhaPente(mm){
+    const P = mm.pente, {c, h} = vm.penteBox, q = P ? P.q : mm.d.q, centro = P ? P.t : aplica(mm.d.t, mm.d.q, c);
+    desenha(vm.pente, matriz(tira(centro, girar(q, c)), q));
+    if (!P || !P.visto) return;
+    const topo = y => aplica(centro, q, [0, h[1] + y, 0]), larg = Math.min(.05, h[0] * 1.25), fundo = Math.min(.075, h[2] * 1.15);
+    desenha(cubo, matriz(topo(.002), q, [larg, .004, fundo]), tom('#0E0E10'));
+    if (P.comMunicao){
+      desenha(cubo, matriz(aplica(topo(.01), q, [0, 0, -fundo * .1]), q, [larg * .72, .013, fundo * .62]), tom('#D9A636'));
+      desenha(cubo, matriz(aplica(topo(.01), q, [0, 0, fundo * .3]), q, [larg * .5, .011, fundo * .2]), tom('#B5662F'));
+    }
+  }
+
   /* ponto da arma (u, v, w em blocos) em relação ao punho direito, já em metros */
   const naArma = (u, v, w) => vez(vm.vertical ? [v, u, w] : [v, w, u], ESCALA);
   const aplica = (t, q, p) => mais(t, girar(q, p));
@@ -332,21 +393,23 @@ const Estande = (() => {
     }
     const q = pos.q, d = {t:tira(pos.p, girar(q, vm.punho)), q};
     const desloca = naArma(pos.mao[0], pos.mao[2], pos.mao[1]);
-    return {d, maoD:{...d, mao:vm.maoD, lado:'d'}, e:vm.maoE ? {t:aplica(d.t, q, desloca), q, mao:vm.maoE, lado:'e'} : null};
+    return recargaNasMaos({d, maoD:{...d, mao:vm.maoD, lado:'d'}, e:vm.maoE ? {t:aplica(d.t, q, desloca), q, mao:vm.maoE, lado:'e'} : null});
   }
   /* arco e estilingue: a esquerda segura no lado da tela; a direita puxa até perto do rosto */
   function maosDeCorda(pos){
     const q = pos.q, G = pos.p, P = p => aplica(G, q, p), eArco = vm.corda === 'arco';
     const puxada = Math.min(1, est.puxada), s = puxada * puxada * (3 - 2 * puxada);
-    const solta = P(eArco ? [.004, .045, -.125] : vm.forma.repouso), ancora = eArco ? [-.062, -.118, .3] : [-.05, -.108, .31];
+    const solta = P(eArco ? [.004, .045, -.125] : vm.forma.repouso), apoio = P(eArco ? [.0215, .0525, .004] : vm.forma.apoio);
+    /* no fim da puxada, mão e apoio ficam um atrás do outro: a flecha segue reta para onde se mira */
+    const ancora = [apoio[0] - .006, apoio[1] - (eArco ? .008 : .048), eArco ? .33 : .34];
     const desce = [0, pos.mao[1] * ESCALA * .6, 0];
     const nock = mais(solta.map((v, i) => lerp(v, ancora[i], s)), desce);
     /* sem puxar, a mão espera fora da tela; ela só sobe até a corda quando se começa a puxar */
     const na = maoNaCorda * maoNaCorda * (3 - 2 * maoNaCorda), espera = [-.2, -.44, .34];
     const ondeEsta = nock.map((v, i) => lerp(espera[i], v, na));
     return {d:{t:G, q}, maoD:{t:G, q, s:[-1, 1, 1], mao:vm.maoD, lado:'e', cotovelo:[.46, -.86, -.2]},
-            e:{t:ondeEsta, q, mao:vm.maoE, lado:'d', cotovelo:[-.86, -.46, -.22]},
-            puxa:na > .55 ? ondeEsta : solta, naCorda:na, apoio:P(eArco ? [.0215, .0525, .004] : vm.forma.apoio)};
+            e:{t:ondeEsta, q, s:eArco ? [.76, .76, .76] : [.66, .66, .66], mao:vm.maoE, lado:'d', cotovelo:eArco ? [-.8, -.58, -.18] : [-.5, -.86, -.12]},
+            puxa:na > .55 ? ondeEsta : solta, naCorda:na, apoio};
   }
   const CLARO = [1.16, 1.16, 1.16];                      /* um pouco mais de luz nas mãos, para o detalhe aparecer */
   let maoNaCorda = 0;                                   /* 0 = esperando embaixo, 1 = na corda */
@@ -433,6 +496,7 @@ const Estande = (() => {
   function atingir(r, dano, dir, golpe){
     if (arena && r.tipo === 'zumbi'){ const res = arena.atingir(r, dano, dir, golpe); if (res){ placar.acertos++; if (res.zona === 'cabeca') placar.cabeca++; if (res.matou) placar.caidos++; } return; }
     if (arena && golpe && r.tipo === 'parede') arena.bateuNaParede();
+    if (naCena && r.tipo === 'parede' && arena) arena.pancadaNoVidro(r.p);
     if (r.tipo === 'zumbi'){
       const z = r.zumbi, naCabeca = r.peca === 'cabeca', total = dano * (naCabeca ? 2.4 : /^(canela|pe|antebraco|mao)/.test(r.peca) ? .6 : 1);
       tocar('carne', r.p, {cabeca:naCabeca, deTiro:!golpe, arma:est.id, forte:golpe && dano > est.f.dano * 1.5});
@@ -464,7 +528,7 @@ const Estande = (() => {
     if (ev.tipo === 'disparo'){
       placar.tiros++;
       tocar('tiro', est.id, est.f);
-      const olho = olhoDe(), saida = paraOMundo(boca(mm));
+      const deFora = arena?.miraDaCamera(), olho = deFora ? deFora.origem : olhoDe(), saida = arena?.boca3() || paraOMundo(boca(mm));
       if (ev.voo){
         /* sai um pouco para cima, para cruzar a linha de mira a uns 15 m */
         const dir = espalhado(ev.espalha), alvo = raio(olho, dir, 15).p, inicio = paraOMundo(mais(boca(mm), [0, 0, .05])), vai = tira(alvo, inicio), t = Math.hypot(...vai) / ev.voo;
@@ -480,11 +544,12 @@ const Estande = (() => {
       if (!ev.voo){
         /* mirando, a fumaça fica menor para não tapar o alvo */
         const quanto = (ev.balas > 1 ? 1.5 : 1) * (est.f.poucoClarao ? .5 : 1);
-        Efeitos.fumaca(bocaNoMundo(mm), direcao(), quanto, 1 - .6 * est.mira);
+        Efeitos.fumaca(arena?.boca3() || bocaNoMundo(mm), direcao(), quanto, arena?.boca3() ? .9 : 1 - .6 * est.mira);
       }
       if (ev.capsula){ soltarCapsula(mm); tocar('capsula'); }
     } else if (ev.tipo === 'ciclo'){ soltarCapsula(mm); tocar('ciclo', est.f.modo); tocar('capsula'); }
     else if (ev.tipo === 'recarregar') tocar('recarga', est.id, est.f, est.durRecarga / ritmo());
+    else if (ev.tipo === 'cartucho') tocar('capsula');
     else if (ev.tipo === 'golpe') tocar('golpe', est.id, !!est.golpe?.forte);
     else if (ev.tipo === 'acerto'){
       const olho = olhoDe(), b = base(), jaFoi = new Set(); let parede = null;
@@ -542,7 +607,8 @@ const Estande = (() => {
   let escondeArma = false;                       /* usado nos testes para medir quanto a arma tapa */
   let fovAtual = BASE_FOV, ultimoFovArma = 52 * Math.PI / 180, refazerLuneta = true;
   function desenhar(pos, mm){
-    const r = canvas.getBoundingClientRect(), esc = Math.min(2, window.devicePixelRatio || 1);
+    /* no modo celular a imagem pode ser desenhada mais leve */
+    const r = canvas.getBoundingClientRect(), esc = Math.min(window.WO_RESOLUCAO || 2, window.devicePixelRatio || 1);
     const W = Math.max(2, Math.round(r.width * esc)), H = Math.max(2, Math.round(r.height * esc));
     if (canvas.width !== W || canvas.height !== H){ canvas.width = W; canvas.height = H; }
     const asp = W / H, noite = $('noite').checked ? 1 : 0, ceu = noite ? [.025, .035, .06] : [.74, .8, .86];
@@ -557,10 +623,11 @@ const Estande = (() => {
     gl.uniformMatrix4fv(U.vp, false, visaoProj(olho, dir, fovAtual, asp, .08, 140, fora ? 0 : jog.rola || 0));
     gl.uniform3fv(U.ceu, ceu); gl.uniform3fv(U.olho, olho); gl.uniform3fv(U.frente, dir);
     gl.uniform1f(U.noite, noite); gl.uniform1f(U.lanterna, lanterna * (noite ? 1 : .22)); gl.uniform1f(U.clarao, Math.max(clarao * .8, clareia)); gl.uniform1f(U.neblina, 1);
-    gl.uniform1f(U.alfa, 1); gl.uniform1f(U.brilho, 0);
+    gl.uniform1f(U.alfa, 1); gl.uniform1f(U.brilho, 0); gl.uniform1f(U.corte, 1e4);
     const I = matriz([0, 0, 0]);
     desenha(cenario, I);
     if (arena) arena.desenhar(); else desenha(placas, I);
+    if (naCena){ desenha(placas, I); Cena.desenhar(); }
     for (const z of arena ? [] : zumbis) desenha(z.malha, matriz([z.x, z.morto > 0 ? .06 : 0, z.z], giroDoZumbi(z)), z.pisca > 0 ? [1.7, .75, .7] : [1, 1, 1]);
     for (const m of marcas) desenha(cubo, matriz(m.p, UM, m.e), tom(m.cor));
     Efeitos.desenhar(cuboDeEfeito, false);
@@ -571,13 +638,21 @@ const Estande = (() => {
       else { const tras = mais(f.p, vez(f.dir, -.5)); risco(tras, mais(f.p, vez(f.dir, f.parado ? -.04 : 0)), .018, '#7A5A34', 0); risco(tras, mais(tras, vez(f.dir, .1)), .045, '#C0362C', 0); }
     }
     if (est.f.laser && est.recarga <= 0 && est.correr < .3){ const p = raio(olho, dir).p, s = .018 + Math.hypot(...tira(p, olho)) * .0022; desenha(cubo, matriz(tira(p, vez(dir, .02)), UM, [s, s, s]), tom('#FF2A20'), 1); }
+    /* o clarão visto de fora */
+    const pontaDeFora = fora && est.clarao > 0 ? arena.boca3() : null;
+    if (pontaDeFora){
+      const d = direcao(), giro = deAte([0, 0, 1], d), k = est.f.poucoClarao ? .55 : est.f.balas > 1 ? 1.5 : 1, g = Math.random() * 3;
+      for (const [ang, comp, cor] of [[g, .24, '#FF9A2A'], [g + 1.57, .2, '#FF9A2A'], [g + .8, .14, '#FFD23A']]) desenha(cubo, matriz(pontaDeFora, qm(giro, qz(ang)), [comp * k, .035 * k, .035 * k]), tom(cor), 1);
+      desenha(cubo, matriz(mais(pontaDeFora, vez(d, .06 * k)), giro, [.07 * k, .07 * k, .18 * k]), tom('#FFF2B8'), 1);
+    }
     /* fumaça e pó por último, transparentes */
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    if (naCena) Cena.desenharVidros(cuboDeEfeito);
     Efeitos.desenhar(cuboDeEfeito, true);
     gl.uniform1f(U.alfa, 1); gl.depthMask(true); gl.disable(gl.BLEND);
 
     /* a arma e os braços: desenhados por cima, para não atravessarem as paredes */
-    if (!pos.lunetaCheia && !escondeArma && !fora){
+    if (!pos.lunetaCheia && !escondeArma && !fora && !(naCena && Cena.maosOcupadas())){
       gl.clear(gl.DEPTH_BUFFER_BIT);
       /* encostando o olho: o campo da arma fecha um pouco, como quem foca na mira */
       const fovArma = 2 * Math.atan(Math.tan((26 - 2.6 * Math.max(0, est.olho)) * Math.PI / 180) * Math.max(1, 1.25 / asp));
@@ -585,6 +660,8 @@ const Estande = (() => {
       gl.uniform3f(U.olho, 0, 0, 0); gl.uniform3f(U.frente, 0, 0, 1);
       gl.uniform1f(U.noite, noite * .8); gl.uniform1f(U.lanterna, 0); gl.uniform1f(U.clarao, clarao * .5 + clareia * .5); gl.uniform1f(U.neblina, 0);
       if (!mm.preso) desenha(vm.arma, matriz(mm.d.t, mm.d.q));
+      if (!mm.preso && vm.pente) desenhaPente(mm);
+      if (mm.cartucho){ desenha(cubo, matriz(mm.cartucho, mm.d.q, [.016, .016, .042]), tom('#D9A636')); desenha(cubo, matriz(aplica(mm.cartucho, mm.d.q, [0, 0, .028]), mm.d.q, [.011, .011, .016]), tom('#B5662F')); }
       gl.uniform1f(U.brilho, .12); desenhaMao(mm.maoD); desenhaMao(mm.e); gl.uniform1f(U.brilho, 0);
       if (vm.mira && !mm.preso){
         const Mm = matriz(mm.d.t, mm.d.q);
@@ -723,7 +800,7 @@ const Estande = (() => {
     $('barra').style.opacity = (f.modo === 'flecha' ? est.puxada : est.segurando ? est.carga : 0) > .05 ? 1 : 0;
     $('marca').style.opacity = marcaTempo > 0 ? 1 : 0;
     $('mensagem').style.opacity = avisoTempo > 0 ? 1 : 0;
-    const municao = f.tipo !== 'tiro' ? (f.golpes ? 'corpo a corpo' : '') : est.recarga > 0 ? (est.destravando ? 'destravando' : 'recarregando') : est.travada ? 'TRAVADA' : `${est.municao} / ${f.pente}`;
+    const municao = f.tipo !== 'tiro' ? (f.golpes ? 'corpo a corpo' : '') : est.recarga > 0 ? (est.destravando ? 'destravando' : est.cartuchos ? `carregando ${est.municao} / ${f.pente}` : 'recarregando') : est.travada ? 'TRAVADA' : `${est.municao} / ${f.pente}`;
     const html = municao + '|' + placar.tiros + placar.acertos + placar.cabeca + placar.caidos;
     if (html !== htmlAntes){ htmlAntes = html; $('municao').textContent = municao; $('placar').textContent = `Acertos: ${placar.acertos} · na cabeça: ${placar.cabeca} · caídos: ${placar.caidos}`; }
   }
@@ -757,12 +834,12 @@ const Estande = (() => {
   const soltaMouse = e => { if (e.button === 2) mouseMira = false; else mouseAtira = false; arrasto = null; };
   addEventListener('pointerup', soltaMouse); addEventListener('pointercancel', () => { mouseAtira = mouseMira = false; arrasto = null; });
   canvas.addEventListener('wheel', e => { e.preventDefault(); parar(); trocarArma(e.deltaY > 0 ? 1 : -1); }, {passive:false});
-  const USADAS = ['w', 'a', 's', 'd', 'r', 'f', 'q', 'e', 'v', ' ', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+  const USADAS = ['w', 'a', 's', 'd', 'r', 'f', 'q', 'e', 'v', ' ', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ...(typeof Cena === 'object' && Cena.ativa ? ['c', 'g', 't', 'x', 'z'] : [])];
   addEventListener('keydown', e => {
     const k = e.key.toLowerCase(); if (!USADAS.includes(k) || e.ctrlKey || e.metaKey || e.altKey) return;
     if (k !== 'shift') e.preventDefault();
     parar();
-    if (arena && !e.repeat && arena.tecla(k, teclas)){ teclas.add(k === ' ' ? 'esquiva' : k); return; }
+    if (arena && (naCena || !e.repeat) && arena.tecla(k, teclas, e.repeat)){ teclas.add(k === ' ' && !naCena ? 'esquiva' : k); return; }
     if (!e.repeat){ if (k === 'r') pedeRecarga = true; if (k === 'f') pedeGolpe = true; if (k === ' ') toques++; if (k === 'q') trocarArma(-1); if (k === 'e') trocarArma(1); }
     teclas.add(k);
   }, true);
@@ -824,7 +901,7 @@ const Estande = (() => {
     const gira = (tem('arrowright') ? 1 : 0) - (tem('arrowleft') ? 1 : 0), sobe = (tem('arrowdown') ? 1 : 0) - (tem('arrowup') ? 1 : 0);
     if (gira || sobe) girarVisao(gira * dt * 700, sobe * dt * 500);
     const corre = tem('shift') && frente > 0, anda = frente || lado ? 1 : 0;
-    if (anda){
+    if (anda && !naCena){
       const v = (corre ? 4.6 : 2.2) * (1 - (est?.mira || 0) * .5) * (arena ? arena.passoDoJogador(frente, lado) * (1 - est.bloqueio * .45) : 1) * dt / Math.hypot(frente, lado);
       const s = Math.sin(jog.rumo), c = Math.cos(jog.rumo);
       const nx = preso(jog.x + (s * frente - c * lado) * v, -11.5, 11.5), nz = preso(jog.z + (c * frente + s * lado) * v, -5, 56);
@@ -875,7 +952,8 @@ const Estande = (() => {
     for (const [id, a] of Object.entries(ARMAS)) if (a.tipo === t) g.append(new Option(a.nome, id));
     sel.append(g);
   }
-  sel.value = 'fuzil_assalto';
+  const armaPedida = new URLSearchParams(location.search).get('arma');
+  sel.value = ARMAS[armaPedida] ? armaPedida : 'fuzil_assalto';
   for (const slot of ['mira', 'ponta', 'baixo', 'carregador']) $('peca_' + slot).add(new Option('Nada', 'nenhum'));
   pecas(); $('peca_mira').value = 'ponto'; montarArma();
   sel.addEventListener('change', () => { const rodando = !!demo; pecas(); if (rodando) iniciarDemo(); else montarArma(); sel.blur(); });
@@ -901,15 +979,20 @@ const Estande = (() => {
   botao('golpeTela', () => { pedeGolpe = true; });
   /* paredes que seguram um corpo */
   function empurrarDasParedes(c, raio_){
-    c.x = preso(c.x, -11.6, 11.6); c.z = preso(c.z, -5.2, 56.5);
+    if (naCena){ c.x = preso(c.x, -Cena.MEIO + .3, Cena.MEIO - .3); c.z = preso(c.z, -Cena.MEIO + .3, Cena.MEIO - .3); }
+    else { c.x = preso(c.x, -11.6, 11.6); c.z = preso(c.z, -5.2, 56.5); }
+    const pes = c.y || 0;
     for (const k of solidos){
-      if (k[2] > 1.4) continue;
+      if (k[2] > pes + 1.4 || naCena && k[3] <= pes + .31) continue;
       const px = preso(c.x, k[0], k[1]), pz = preso(c.z, k[4], k[5]), dx = c.x - px, dz = c.z - pz, d = Math.hypot(dx, dz);
       if (d < raio_ && d > 1e-5){ c.x = px + dx / d * raio_; c.z = pz + dz / d * raio_; }
     }
   }
   if (arena){
-    arena.ligar({jog, malha, matriz, desenha, raioCaixa, qm, qx, qy, qz, girar, olho:() => olhoDe(), direcao, estado:() => est, aviso, acertou, tocar, pecas, montarArma, parar,
+    if (naCena) Cena.ligar({corte:y => gl.uniform1f(U.corte, y ?? 1e4), malha, matriz, desenha, qm, qx, qy, qz, girar, bloco, risco,
+      cubo:(p, q, s, cor, emite) => desenha(cubo, matriz(p, q || UM, s), tom(cor), emite),
+      malhaCrua:d => { const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, d, gl.STATIC_DRAW); return {buf, n:d.length / 9}; }});
+    arena.ligar({bloco, solidos:() => solidos, jog, malha, matriz, desenha, risco, cubo:(p, q, s, cor, emite) => desenha(cubo, matriz(p, q || UM, s), tom(cor), emite), teclas:() => teclas, recarga:() => vm?.pente3 || (vm?.porta3 ? {porta:vm.porta3, c:[0, 0, 0], baixo:[0, -1, 0], h:[0, 0, 0]} : null), raioCaixa, qm, qx, qy, qz, girar, olho:() => olhoDe(), direcao, estado:() => est, aviso, acertou, tocar, pecas, montarArma, parar,
       andar:(dx, dz) => { jog.x += dx; jog.z += dz; empurrarDasParedes(jog, .28); },
       empurrar:empurrarDasParedes,
       limpar:() => { marcas.length = tracos.length = voando.length = capsulas.length = 0; Efeitos.limpar(); },
@@ -921,7 +1004,7 @@ const Estande = (() => {
   mostrarSom();
   requestAnimationFrame(laco);
 
-  return {quadro, esconderArma:v => { escondeArma = v; }, redesenhar:() => desenhar(pos, mm), iniciarDemo, usarSom:s => { som = s; }, som:() => som, parar, montarArma, pecas, trocarArma, raio, jog, zumbis, placar, tela,
+  return {olhar:girarVisao, quadro, esconderArma:v => { escondeArma = v; }, redesenhar:() => desenhar(pos, mm), iniciarDemo, usarSom:s => { som = s; }, som:() => som, parar, montarArma, pecas, trocarArma, raio, jog, zumbis, placar, tela,
           estado:() => est, posicao:() => pos, maos:() => mm, boca:() => boca(mm),
           pausar:() => { parado = true; }, continuar:() => { if (parado){ parado = false; anterior = 0; requestAnimationFrame(laco); } }};
 })();

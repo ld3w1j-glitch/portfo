@@ -169,7 +169,7 @@ const opcoesDe = (id, slot) => Object.fromEntries(Object.entries(MODS_ARMA[slot]
 /* caixas da arma, em ordem [u0, u1, v0, v1, w0, w1, material] */
 function caixasDaArma(id){
   const out = [];
-  ARMAS[id].desenhar((u0, u1, v0, v1, w0, w1, mat) => out.push([Math.min(u0, u1), Math.max(u0, u1), Math.min(v0, v1), Math.max(v0, v1), Math.min(w0, w1), Math.max(w0, w1), mat]));
+  ARMAS[id].desenhar((u0, u1, v0, v1, w0, w1, mat) => out.push([Math.min(u0, u1), Math.max(u0, u1), Math.min(v0, v1), Math.max(v0, v1), Math.min(w0, w1), Math.max(w0, w1), mat, PARTE_ARMA.pente]));
   return out;
 }
 function comModificacoes(id, mods){
@@ -195,10 +195,10 @@ function comModificacoes(id, mods){
         b(a, z, v0, v1, w0, w1, P.tons[t]);
       }
     };
-    caixas.forEach(pinta);
+    caixas.forEach(c => c[7] ? noPente(() => pinta(c)) : pinta(c));
     /* nas de gambiarra o topo é torto: um calço de fita enrolada segura a mira */
     if (m.mira !== 'nenhum' && A.tipo === 'gambiarra') b(E.mira[0] - 2, E.mira[0] + 2, -.5, .5, E.mira[1] - 1, E.mira[1] + .1, 'a_fita');
-    for (const slot of ['mira', 'ponta', 'baixo', 'carregador']) if (m[slot] !== 'nenhum') MODS_ARMA[slot][m[slot]].desenhar(b, ...E[slot]);
+    for (const slot of ['mira', 'ponta', 'baixo', 'carregador']) if (m[slot] !== 'nenhum'){ const faz = () => MODS_ARMA[slot][m[slot]].desenhar(b, ...E[slot]); slot === 'carregador' ? noPente(faz) : faz(); }
 
     if (m.reforco !== 'nenhum'){
       const fim = Math.max(...original.map(c => c[1]));

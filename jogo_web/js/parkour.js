@@ -12,6 +12,7 @@ const Parkour = (() => {
     escalar:1.55,                           /* apoia as mãos e sobe */
     agarrar:2.4,                            /* pula, pendura e puxa */
     alcanceAndando:1.0, alcanceCorrendo:1.7,
+    alcanceNoVao:1.45, alcanceNoVaoCorrendo:2.1,   /* com um vão até a borda, ele salta e se agarra nela */
     agarrarNoAr:[1.15, 1.95],               /* só agarra quando as mãos alcançam: borda nesta altura acima dos pés */
     raio:.22, altura:1.79, alturaAgachado:1.3,
     quedaForte:6.6,
@@ -78,8 +79,9 @@ const Parkour = (() => {
     return g;
   }
   function empurrar(caixas, e, altura, raio = A.raio){
+    const pes = e.piso ?? e.y;                    /* o chão em que ele pisa (o desenho sobe o degrau suave, um instante depois) */
     for (const c of caixas){
-      if (c.y1 <= e.y + A.degrau || c.y0 >= e.y + altura) continue;
+      if (c.y1 <= pes + A.degrau || c.y0 >= pes + altura) continue;
       const px = preso(e.x, c.x0, c.x1), pz = preso(e.z, c.z0, c.z1), dx = e.x - px, dz = e.z - pz, d = Math.hypot(dx, dz);
       if (d >= raio) continue;
       if (d > 1e-5){ e.x = px + dx / d * raio; e.z = pz + dz / d * raio; }
@@ -94,7 +96,7 @@ const Parkour = (() => {
   function olhar(caixas, e, longe){
     const fx = Math.sin(e.rumo), fz = Math.cos(e.rumo); let achou = null;
     for (const c of caixas){
-      if (c.y1 <= e.y + A.degrau || c.y0 > e.y + A.altura + .2) continue;
+      if (c.liso || c.y1 <= e.y + A.degrau || c.y0 > e.y + A.altura + .2) continue;
       /* cada face que está virada para o personagem */
       for (const [nx, nz, plano, a0, a1, fundo] of [[0, 1, c.z0, c.x0, c.x1, c.z1 - c.z0], [0, -1, c.z1, c.x0, c.x1, c.z1 - c.z0], [1, 0, c.x0, c.z0, c.z1, c.x1 - c.x0], [-1, 0, c.x1, c.z0, c.z1, c.x1 - c.x0]]){
         const aFrente = fx * nx + fz * nz; if (aFrente < .72) continue;       /* precisa estar mais ou menos de frente (até 44°) */
@@ -102,11 +104,58 @@ const Parkour = (() => {
         if (dist < -.05 || dist > longe) continue;
         const lado = nx ? e.z + fz / aFrente * dist : e.x + fx / aFrente * dist;
         if (lado < a0 - .05 || lado > a1 + .05) continue;
-        if (!achou || dist < achou.dist) achou = {caixa:c, dist, nx, nz, plano, a0, a1, fundo, altura:c.y1 - e.y, vaoEmbaixo:c.y0 - e.y};
+        if (achou && dist >= achou.dist) continue;
+        const o = {caixa:c, dist, nx, nz, plano, a0, a1, fundo, altura:c.y1 - e.y, vaoEmbaixo:c.y0 - e.y};
+        Object.assign(o, classificar(o));
+        /* sem chão antes da borda não há onde apoiar o pé: o jeito é saltar, agarrar e puxar */
+        if (o.pode && o.tipo !== 'baixo' && e.modo === 'chao' && temVao(caixas, e, o)){ o.vao = true; o.tipo = 'agarrar'; o.texto = 'tem um vão antes da borda: salta, agarra e puxa'; }
+        if (cabe(caixas, e, o)) achou = o;                    /* uma borda atrás de outra peça não conta */
       }
     }
-    if (achou) Object.assign(achou, classificar(achou));
     return achou;
+  }
+
+  /* falta chão logo antes da face (mais de 60 cm abaixo dos pés)? */
+  function temVao(caixas, e, o){
+    if (o.dist < .45) return false;
+    const [x, z] = naFace(o, noLugar(o, o.nx ? e.z : e.x), -.34, 0);
+    return chaoEm(caixas, x, z, e.y) < e.y - .6;
+  }
+
+  /* ---------------------------------------------------------------- o corpo cabe? */
+  const margemDaBorda = .3;
+  const noLugar = (o, lado) => o.a1 - o.a0 > margemDaBorda * 2 ? preso(lado, o.a0 + margemDaBorda, o.a1 - margemDaBorda) : (o.a0 + o.a1) / 2;
+  /* há alguma peça (fora a que ele está usando) neste ponto, ocupando entre as alturas "de" e "ate"? */
+  const ocupado = (caixas, alvo, x, z, de, ate, folga = .03) => caixas.some(k => k !== alvo && k.y1 > de && k.y0 < ate && dentro(k, x, z, folga));
+  /* um ponto em relação à face: s = para dentro da peça (negativo = antes dela); w = de lado */
+  const naFace = (o, lado, s, w) => o.nx ? [o.plano + o.nx * s, lado + w] : [lado + w, o.plano + o.nz * s];
+  /* o espaço de quem está pendurado ou subindo nesta borda, naquela posição de lado */
+  function bordaLivre(caixas, o, lado, pe){
+    const topo = o.caixa.y1;
+    for (const w of [-.17, 0, .17]) for (const s of [-.12, -.28, -.44]){
+      const [x, z] = naFace(o, lado, s, w); if (ocupado(caixas, o.caixa, x, z, pe + A.degrau, topo - .1)) return false;
+    }
+    for (const w of [-.2, .2]){ const [x, z] = naFace(o, lado, .05, w); if (ocupado(caixas, o.caixa, x, z, topo + .08, topo + .25, 0)) return false; }       /* lugar para as mãos */
+    return true;
+  }
+  function cabe(caixas, e, o){
+    if (o.tipo === 'baixo') return true;                               /* passagem baixa: só se abaixa */
+    const lado = noLugar(o, o.nx ? e.z : e.x), topo = o.caixa.y1;
+    /* pendurado, o corpo desce até uns 1,7 m abaixo da borda; do chão, começa nos pés */
+    const pendura = o.tipo === 'agarrar' || e.modo === 'ar', pe = pendura ? Math.max(topo - 1.85, Math.min(e.y, topo - 1.85)) : e.y;
+    const sobe = o.tipo === 'subir' || o.tipo === 'escalar' || o.tipo === 'agarrar' || o.tipo === 'porcima';
+    /* o caminho de onde ele está até a frente da borda */
+    const [fx, fz] = naFace(o, lado, -.36, 0), passos = Math.max(1, Math.ceil(Math.hypot(fx - e.x, fz - e.z) / .1));
+    for (let i = 1; i <= passos; i++) if (ocupado(caixas, o.caixa, e.x + (fx - e.x) * i / passos, e.z + (fz - e.z) * i / passos, Math.max(e.y, pe) + A.degrau, topo - .1, .08)) return false;
+    if (!bordaLivre(caixas, o, lado, pe)) return false;
+    if (!sobe) return true;
+    /* em cima: lugar para o corpo passar e ficar */
+    for (const w of [-.16, 0, .16]) for (const s of [.2, .42]){ const [x, z] = naFace(o, lado, s, w); if (ocupado(caixas, o.caixa, x, z, topo + A.degrau, topo + 1.15)) return false; }
+    /* passando por cima: o outro lado tem de estar livre, até onde ele cai */
+    if (o.tipo === 'porcima') for (const w of [-.18, 0, .18]) for (const s of [.2, .45, .72]){
+      const [x, z] = naFace(o, lado, o.fundo + s, w); if (ocupado(caixas, o.caixa, x, z, e.y + A.degrau, topo + 1.0, .06)) return false;
+    }
+    return true;
   }
   function classificar(o){
     const h = o.altura, c = o.caixa;
@@ -305,14 +354,24 @@ const Parkour = (() => {
       else { e.aviso = r.texto; e.avisoAte = 2.5; anotar(e, corda ? 'corda não serve' : 'sem corda'); }
     }
     if (e.avisoAte > 0 && (e.avisoAte -= dt) <= 0) e.aviso = '';
+    if (e.modo !== 'chao') e.piso = null;
     if (e.modo === 'chao'){
+      if (e.piso === undefined || e.piso === null || Math.abs(e.piso - e.y) > .65) e.piso = e.y;
       /* precisa se abaixar? olha em cima e um pouco à frente */
       const fx = Math.sin(e.rumo), fz = Math.cos(e.rumo);
       const teto = caixas.some(k => k.y0 - e.y > .85 && k.y0 - e.y < A.altura + .02 && [0, .35, .7].some(d => dentro(k, e.x + fx * d, e.z + fz * d, A.raio)));
       if (teto || c.agachar) anotar(e, teto ? 'abaixa' : 'agacha');
       e.agacha = puxa(e.agacha, teto || c.agachar ? 1 : 0, 11, dt);
       e.atordoado = Math.max(0, e.atordoado - dt);
-      const m = Locomocao.avancar(e.loco, dt, c.quer, c.correndo && e.agacha < .3 && !(temSaude && Saude.quanto(e) > .15));
+      /* em guarda (cena única) ele olha para onde mira e anda em qualquer direção; senão, o corpo vira para onde vai */
+      let m;
+      if (c.guarda){
+        const gv = Math.hypot(c.guarda.vx, c.guarda.vz), lim = (gv > e.loco.vel ? Locomocao.AJUSTES.arranque : Locomocao.AJUSTES.freio) * dt;
+        e.loco.vel += preso(gv - e.loco.vel, -lim, lim); e.loco.rumo = c.guarda.rumo; e.loco.velAng = 0; e.loco.acel = 0;
+        if (gv > .01) e.guardaDir = [c.guarda.vx / gv, c.guarda.vz / gv];
+        const dir = e.guardaDir || [0, 0];
+        m = {dx:dir[0] * e.loco.vel * dt, dz:dir[1] * e.loco.vel * dt, falta:0};
+      } else m = Locomocao.avancar(e.loco, dt, c.quer, c.correndo && e.agacha < .3 && !(temSaude && Saude.quanto(e) > .15));
       const teto_v = Math.min(e.agacha > .3 ? 1.15 : e.atordoado > 0 ? .5 : 99, temSaude ? Saude.limite(e) : 99);
       if (e.loco.vel > teto_v) e.loco.vel = Math.max(teto_v, e.loco.vel - A.gravidade * dt);
       const x0 = e.x, z0 = e.z, k = e.loco.vel > 0 ? Math.min(1, e.loco.vel * dt / (Math.hypot(m.dx, m.dz) || 1)) : 0;
@@ -320,16 +379,20 @@ const Parkour = (() => {
       for (let i = 0; i < partes; i++){ e.x += m.dx * k / partes; e.z += m.dz * k / partes; empurrar(caixas, e, e.agacha > .75 ? A.alturaAgachado : A.altura); }
       const andou = Math.min(Math.hypot(e.x - x0, e.z - z0), e.loco.vel * dt);
       if (andou < e.loco.vel * dt * .35) e.loco.vel = Math.max(andou / dt, e.loco.vel - Locomocao.AJUSTES.freio * dt);
+      const faseAntes = e.loco.fase;
       Locomocao.assentarPasso(e.loco, dt, andou, m.falta);
+      if (c.guarda?.deCostas) e.loco.fase = faseAntes - (e.loco.fase - faseAntes);       /* de costas, o passo anda para trás */
       e.rumo = e.loco.rumo;
-      const g = chaoEm(caixas, e.x, e.z, e.y);
-      if (g < e.y - A.degrau){                       /* saiu da beirada */
+      const g = chaoEm(caixas, e.x, e.z, e.piso);
+      if (g < e.piso - A.degrau){                    /* saiu da beirada */
+        e.piso = null;
         e.vy = 0; e.vx = Math.sin(e.rumo) * e.loco.vel; e.vz = Math.cos(e.rumo) * e.loco.vel; e.noAr = 0; e.naBeirada = true; trocar(e, 'ar');
         if (c.pular){ e.vy = A.pulo; e.naBeirada = false; anotar(e, 'pula'); }     /* apertou no instante em que a beirada acabou */
         else anotar(e, 'cai');
       } else {
         if (g > e.y + .08) anotar(e, 'degrau');
-        e.y = puxa(e.y, g, g > e.y ? 16 : 20, dt);
+        e.piso = g;
+        e.y = puxa(e.y, g, g > e.y ? 24 : 22, dt);
       }
       rot = Locomocao.pose(e.loco, parado.rot, parado.arma, parado.mods);
       if (temSaude) rot = Saude.manqueira(rot, e, e.loco.fase, Math.min(1, e.loco.mexe * 1.15));
@@ -339,7 +402,7 @@ const Parkour = (() => {
       const naoPula = c.pular && temSaude && Saude.impede(e, 'pular');
       if (naoPula){ e.aviso = naoPula; e.avisoAte = 2.2; }
       if (c.pular && e.modo === 'chao' && e.atordoado <= 0 && !naoPula){
-        const o = e.visto, alcance = e.loco.vel > 3 ? A.alcanceCorrendo : A.alcanceAndando;
+        const o = e.visto, correndo = e.loco.vel > 3, alcance = o?.vao ? (correndo ? A.alcanceNoVaoCorrendo : A.alcanceNoVao) : correndo ? A.alcanceCorrendo : A.alcanceAndando;
         if (o && o.tipo !== 'baixo' && o.dist <= alcance){ e.rot = rot; comecarAcao(e, o.tipo, o, e.y); e.acao.parado = parado.livre; }
         else {
           e.rot = rot; e.vy = A.pulo; e.vx = Math.sin(e.rumo) * e.loco.vel; e.vz = Math.cos(e.rumo) * e.loco.vel; e.noAr = 0; e.naBeirada = false; trocar(e, 'ar'); anotar(e, 'pula');
@@ -400,7 +463,8 @@ const Parkour = (() => {
       e.lado = puxa(e.lado, c.lado, 10, dt); if (Math.abs(e.lado) < .02) e.lado = 0;
       if (e.lado){
         const i = a.o.nx ? 1 : 0, sentido = i ? a.fx : -a.fz;             /* + = direita de quem está pendurado */
-        a.origem[i] = preso(a.origem[i] + sentido * e.lado * .55 * dt, a.o.a0 + margem, a.o.a1 - margem);
+        const novo = preso(a.origem[i] + sentido * e.lado * .55 * dt, a.o.a0 + margem, a.o.a1 - margem);
+        if (bordaLivre(caixas, a.o, novo, a.o.caixa.y1 - 1.85)) a.origem[i] = novo;
         e.passoMao = (e.passoMao || 0) + dt * 9; anotar(e, 'de lado');
       }
       const onda = Math.sin(e.balanco * 4.2) * Math.exp(-e.balanco * 1.6), passinho = Math.sin(e.passoMao || 0) * Math.abs(e.lado);

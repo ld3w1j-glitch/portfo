@@ -3,6 +3,8 @@
 const $ = s => document.querySelector(s);
 const {MEIO, PEDACO, PEDACOS, MATERIAIS, M, ESTILOS, FERRAMENTAS, m} = Mundo;
 const GUARDA = 'wo-mundo', GUARDA_PREF = 'wo-mundo-pref';
+/* área de teste (mundo.html?teste ou ?teste=normal): sempre o mesmo mapa, já caminhando, sem tocar no mundo salvo */
+const TESTE = (location.search.match(/[?&]teste(?:=(\w+))?(?:&|$)/) || null);
 const aviso = t => { $('#aviso').textContent = t; clearTimeout(aviso.t); aviso.t = setTimeout(() => $('#aviso').textContent = '', 5000); };
 const QUALIDADES = {baixa:{nome:'Leve', lim:[100, 240, 520]}, media:{nome:'Média', lim:[210, 520, 1000]}, alta:{nome:'Alta', lim:[340, 800, 1600]}};
 const LUZES = {
@@ -25,9 +27,9 @@ const guardaPref = () => { try { localStorage.setItem(GUARDA_PREF, JSON.stringif
 const centro = {lat:DADOS_BAIRRO.lat, lon:DADOS_BAIRRO.lon};
 const temRuas = () => typeof RUAS_BAIRRO !== 'undefined' && !!RUAS_BAIRRO;
 function prepararBairro(fonte){ if (fonte === 'bairro' && temRuas()){ Mundo.importarOSM(RUAS_BAIRRO, centro); Mundo.fixarBase(); } }
-function novoMundo(fonte){ Mundo.criar(fonte, DADOS_BAIRRO, 1 + Math.floor(Math.random() * 9999)); prepararBairro(fonte); m.povo.ativo = fonte === 'bairro' && temRuas(); }
+function novoMundo(fonte, semente){ Mundo.criar(fonte, DADOS_BAIRRO, semente || 1 + Math.floor(Math.random() * 9999)); prepararBairro(fonte); m.povo.ativo = fonte === 'bairro' && temRuas(); }
 let relogioGuarda;
-function guardarEmBreve(){ clearTimeout(relogioGuarda); relogioGuarda = setTimeout(() => { try { localStorage.setItem(GUARDA, JSON.stringify(Mundo.salvar({nome:pref.nome}))); } catch (e){ aviso('Não deu para guardar no navegador. Use "Salvar mundo" para não perder.'); } }, 900); }
+function guardarEmBreve(){ if (TESTE) return; clearTimeout(relogioGuarda); relogioGuarda = setTimeout(() => { try { localStorage.setItem(GUARDA, JSON.stringify(Mundo.salvar({nome:pref.nome}))); } catch (e){ aviso('Não deu para guardar no navegador. Use "Salvar mundo" para não perder.'); } }, 900); }
 function recuperar(){
   try { const s = localStorage.getItem(GUARDA); if (s){ const o = JSON.parse(s); if (o.cfg?.fonte === 'morros') return false; Mundo.abrir(o, DADOS_BAIRRO, prepararBairro); if (!o.povo) m.povo.ativo = o.cfg?.fonte === 'bairro' && temRuas(); return true; } } catch (e){}
   return false;
@@ -898,14 +900,31 @@ function ajustar(){
 Mundo.definirCalcada(Passeio.substituto);
 if (!gl){ $('#carregando').textContent = 'Este navegador não abriu o 3D (WebGL).'; return; }
 setTimeout(() => {
-  if (!recuperar()) novoMundo('bairro');
+  if (TESTE){ novoMundo('bairro', 7); m.povo.estado = TESTE[1] === 'normal' ? 'normal' : 'abandonado'; }
+  else if (!recuperar()) novoMundo('bairro');
   Object.assign(cam, VISTAS.bairro); cam.y = Mundo.altura(0, 0);
   repovoar(); aplicaLuz(); pintarMapa(); painel(); dica();
   const olho = eixos().olho; for (let k = 0; k < pedacos.length; k++) monta(k, 8); m.sujos.clear();          /* primeiro tudo grosso; o detalhe chega em seguida */
   atualizarPedacos(olho, 400);
   $('#carregando').hidden = true; new ResizeObserver(ajustar).observe(canvas); ajustar();
+  if (TESTE) comecarTeste();
   window.__mundo.pronto = true;
 }, 80);
+/* leva para o meio de uma rua do bairro, olhando ao longo dela, e já começa a caminhar */
+function comecarTeste(){
+  let melhor = null;
+  for (const r of m.ruas){
+    if (!Povoar.URBANAS.has(r.tipo)) continue;
+    for (let i = 1; i < r.pts.length; i++){
+      const a = r.pts[i - 1], b = r.pts[i], ax = a.x ?? a[0], az = a.z ?? a[1], bx = b.x ?? b[0], bz = b.z ?? b[1];
+      const x = (ax + bx) / 2, z = (az + bz) / 2, d = Math.hypot(x, z), comprido = Math.hypot(bx - ax, bz - az);
+      if (comprido > 12 && (!melhor || d < melhor.d)) melhor = {x, z, d, rumo:Math.atan2(bx - ax, bz - az)};
+    }
+  }
+  if (melhor){ cam.x = melhor.x; cam.z = melhor.z; cam.giro = melhor.rumo + Math.PI; }
+  cam.y = Mundo.altura(cam.x, cam.z); alternarCaminhada();
+  aviso('Área de teste: mapa fixo, nada é salvo. WASD anda, Shift corre, V muda a visão.');
+}
 window.__mundo = {pronto:false, zonas:zonasAtuais, dividirZonas, sugerirDonos, clicarZona, escolheZona, gerarPacote, conferirTudo, conferirNaTela, conferencia:() => conferencia, irAte, alternarVisao, assentar, povoado:() => povoado, repovoar, apagarObjetos, colocarObjeto, objetosDesenhados:() => ({n:desenhados, faces:facesObjetos}), instancias:!!inst, cam, pref, anda, desenhar, pedirDesenho, imagem, painel, pintarMapa, exportarAlturas, exportarGLBArea, alternarCaminhada, teclas,
   /* monta de uma vez todo o detalhe da vista atual (usado nos testes e nas imagens) */
   completar:() => { passeioDeUmaVez = true; if (anda.ativo) assentar(); cam.y = anda.ativo ? anda.y + (anda.casa ? 1 : 1.35) : Mundo.altura(cam.x, cam.z); const t0 = performance.now(); atualizarPedacos(eixos().olho, 1e9); desenhar(); passeioDeUmaVez = false; return Math.round(performance.now() - t0); },

@@ -6,6 +6,8 @@ const Casas = (() => {
   const DEGRAU = {largura:1.7, fundo:.2, altura:.22, quantos:12};          /* degraus na porta da frente, para casas em terreno inclinado */
   const sorte = (a, b = 0, c = 0) => { let h = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 2147483629)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
+  /* semFolhas: a cena desenha as portas e o meio das janelas à parte, porque eles se mexem e quebram */
+  const opcoes = {semFolhas:false};
   const VIDRO = '#3E5566', MOLDURA = '#EDE9DD', PORTA = '#6A472C', TELHA = '#A8543A', TELHA2 = '#8E4330', LAJE = '#9D9A92', TIJOLO = '#A9583C', REBOCO = '#B3ADA0', FERRUGEM = '#8A4A24', TABUA = '#6E5844', MATO = '#5C7F33';
 
   /* ================================================================ móveis: desenhados com a frente para +z e as costas para -z */
@@ -149,6 +151,7 @@ const Casas = (() => {
         for (const t of trechos(-meio, meio, fora[lado] || [])){
           if (t.tipo === 'porta') continue;
           out.push(eixo === 'x' ? {x0:t.a, x1:t.b, z0:s * hd - (s > 0 ? .18 : 0), z1:s * hd + (s > 0 ? 0 : .18), tipo:'parede'} : {x0:s * hw - (s > 0 ? .18 : 0), x1:s * hw + (s > 0 ? 0 : .18), z0:t.a, z1:t.b, tipo:'parede'});
+          out[out.length - 1].fora = true;
         }
       }
       for (const w of (nivel ? p.dentroCima : p.dentro) || []) for (const t of trechos(w.de, w.ate, w.vaos)){
@@ -180,16 +183,16 @@ const Casas = (() => {
       if (t.tipo === 'porta'){
         pedaco(t.a, t.b, 2.2, ALT);
         if (corFora !== TIJOLO){ caixa(t.a - .07, t.a, 0, 2.27, -.025, .2, MOLDURA, 0); caixa(t.b, t.b + .07, 0, 2.27, -.025, .2, MOLDURA, 0); caixa(t.a, t.b, 2.2, 2.27, -.025, .2, MOLDURA, 0); }
-        if (lado === 'f' && !nivel && corFora !== TIJOLO) g.b(t.b - .035, 0, hd - .62, .06, 2.12, .86, p.nome.startsWith('loja') ? VIDRO : PORTA, .45);      /* folha aberta para dentro */
+        if (!opcoes.semFolhas && lado === 'f' && !nivel && corFora !== TIJOLO) g.b(t.b - .035, 0, hd - .62, .06, 2.12, .86, p.nome.startsWith('loja') ? VIDRO : PORTA, .45);      /* folha aberta para dentro */
         return;
       }
       pedaco(t.a, t.b, 0, v.sill); pedaco(t.a, t.b, v.sill + v.h, ALT);
       if (!nivel && corFora === 'pintura') caixa(t.a, t.b, 0, .45, -.012, .002, 'pintura', .55, .72);
       if (corFora === TIJOLO) return;
       caixa(t.a - .06, t.b + .06, v.sill - .07, v.sill, -.07, .2, MOLDURA, 0);
-      for (const [a, b] of [[t.a - .03, t.a + .04], [t.b - .04, t.b + .03], [v.c - .025, v.c + .025]]) caixa(a, b, v.sill, v.sill + v.h, .02, .09, MOLDURA, 0);
+      for (const [a, b] of [[t.a - .03, t.a + .04], [t.b - .04, t.b + .03], ...(opcoes.semFolhas ? [] : [[v.c - .025, v.c + .025]])]) caixa(a, b, v.sill, v.sill + v.h, .02, .09, MOLDURA, 0);
       caixa(t.a, t.b, v.sill + v.h, v.sill + v.h + .05, -.01, .12, MOLDURA, 0);
-      if (!velha || sorte(i, s + 3, nivel) > .4) caixa(t.a, t.b, v.sill + v.h * .55, v.sill + v.h * .55 + .04, .03, .08, MOLDURA, 0);
+      if (!opcoes.semFolhas && (!velha || sorte(i, s + 3, nivel) > .4)) caixa(t.a, t.b, v.sill + v.h * .55, v.sill + v.h * .55 + .04, .03, .08, MOLDURA, 0);
       if (velha && v.l > .8){ if (sorte(i, 7, s + nivel) < .6){ caixa(t.a - .14, t.b + .1, v.sill + v.h * .68, v.sill + v.h * .68 + .14, -.05, -.005, TABUA, .3); caixa(t.a - .08, t.b + .16, v.sill + v.h * .24, v.sill + v.h * .24 + .14, -.056, -.008, TABUA, .3); } }
     });
     /* abandonada: manchas na parede cheia e mato no pé, sem tampar portas */
@@ -381,5 +384,5 @@ const Casas = (() => {
     return [a, b];
   }
 
-  return {ALT, PISO, ANDAR, RAIO, DEGRAU, PLANTAS, DE_TIPO, MOVEIS, plantaDe, desenhar, paredes, moveisDe, areaDoMovel, alturaTotal, chaoLocal, paraLocal, paraMundo, afasta, trechos};
+  return {opcoes, ALT, PISO, ANDAR, RAIO, DEGRAU, PLANTAS, DE_TIPO, MOVEIS, plantaDe, desenhar, paredes, moveisDe, areaDoMovel, alturaTotal, chaoLocal, paraLocal, paraMundo, afasta, trechos};
 })();

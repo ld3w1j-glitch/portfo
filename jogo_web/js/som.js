@@ -233,7 +233,13 @@ const Som = (() => {
     }
     trocarGrupo();
 
-    const todos = {tiro, puxarCorda, ciclo, seco, falha, destravar, recarga, sacar, capsula, golpe, carne, material, impacto, alvo, zumbi, passo, marcador, dor, ofegar, forca, agarrado, queda, mordida, empurrao, quebrar};
+    /* o toque do celular velho: três bipes duplos */
+    function toqueCelular(onde){ const r = rota({onde, volume:2.2, molhado:.18}); for (let n = 0; n < 3; n++) for (const [d, f] of [[0, 1480], [.09, 1860]]) nota(r, {t:n * .26 + d, dura:.07, pico:.34, onda:'square', f, filtro:f, q:3}); }
+    function explosao(onde){ const r = rota({onde, volume:3.2, molhado:.5}); chiado(r, {dura:.07, pico:1, tipo:'highpass', f:1400}); baque(r, 0, 74, 1.2, .55); chiado(r, {t:.02, dura:1.1, pico:.7, f:1500, ate:140}); for (let i = 0; i < 9; i++) metal(r, .06 + i * entre(.025, .06), entre(1800, 4200), .16, .06); }
+    function mandibula(onde){ const r = rota({onde, volume:1.8, molhado:.14}); metal(r, 0, 620, .9, .28); metal(r, .018, 910, .7, .2); baque(r, 0, 130, .8, .08); }
+    function latas(onde){ const r = rota({onde, volume:1.8, molhado:.2}); for (let i = 0; i < 12; i++) metal(r, i * entre(.035, .07), entre(900, 2600), .3 - i * .015, .09); }
+
+    const todos = {toqueCelular, explosao, mandibula, latas, tiro, puxarCorda, ciclo, seco, falha, destravar, recarga, sacar, capsula, golpe, carne, material, impacto, alvo, zumbi, passo, marcador, dor, ofegar, forca, agarrado, queda, mordida, empurrao, quebrar};
     const contados = Object.fromEntries(Object.entries(todos).map(([n, fn]) => [n, (...a) => { contagem[n] = (contagem[n] || 0) + 1; return fn(...a); }]));
     return {...contados, trocarGrupo, contagem, ctx, volume:v => { geral.gain.value = v; }, ouvir:(p, direita) => { ouvinte = {p, direita}; }};
   }

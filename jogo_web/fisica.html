@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Objetos com física</title>
+<link rel="stylesheet" href="estilo.css">
+<style>
+  .app{grid-template-columns:1fr 300px}
+  #visor{background:linear-gradient(#dfe4ea,#c6cbd2)}
+  #conteudo{padding:16px}
+  .larga{display:block;width:100%;background:var(--grafite);color:inherit;border:1px solid var(--linha);padding:12px;font:700 15px Inter,system-ui,sans-serif;cursor:pointer;margin:0 0 12px}
+  .larga.ativo{background:var(--laranja);border-color:var(--laranja);color:var(--grafite)}
+  .nota{color:var(--cinza);font-size:13px;margin:0 0 14px}
+  .cruz{display:grid;grid-template-columns:repeat(3,52px);gap:6px;justify-content:center;margin:0 0 16px}
+  .cruz button{height:46px;background:var(--grafite);color:inherit;border:1px solid var(--linha);font:700 18px Inter,system-ui,sans-serif;cursor:pointer;touch-action:none;user-select:none}
+  .cruz button:active{background:var(--laranja);color:var(--grafite)}
+  .marca{display:flex;gap:9px;align-items:center;margin:0 0 12px;cursor:pointer}
+  .marca input{width:18px;height:18px;accent-color:var(--laranja)}
+  @media(max-width:900px){.app{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="palco" aria-label="Quintal de teste">
+    <header>
+      <h1>Objetos <span>com física</span></h1>
+      <div class="modelos"><a class="abrir-cenario" href="inicio.html">← Todas as ferramentas</a></div>
+    </header>
+    <canvas id="visor" tabindex="0" aria-label="Quintal de teste. Arraste para girar e role para aproximar."></canvas>
+    <footer><p id="aviso" role="status"></p></footer>
+  </section>
+  <aside class="painel">
+    <div id="conteudo">
+      <button type="button" class="larga ativo" id="demo">▶ Demonstração automática</button>
+      <div class="cruz" aria-label="Setas para controlar o personagem">
+        <span></span><button type="button" data-tecla="w" aria-label="Para a frente">↑</button><span></span>
+        <button type="button" data-tecla="a" aria-label="Para a esquerda">←</button><button type="button" data-tecla="s" aria-label="Para trás">↓</button><button type="button" data-tecla="d" aria-label="Para a direita">→</button>
+      </div>
+      <label class="marca"><input id="correndo" type="checkbox"> Correr (ou segure Shift)</label>
+      <button type="button" class="larga" id="arrumar">↻ Arrumar tudo de novo</button>
+      <p class="nota">WASD ou setas para andar. <b>Andando</b>, ele empurra o latão sem derrubar; <b>correndo</b>, derruba, e o lixo se espalha. Sacos amassam e escorregam, pedaços pequenos voam.</p>
+      <p class="nota" id="contagem" role="status"></p>
+    </div>
+  </aside>
+</main>
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/quimicos.js"></script>
+<script src="js/armas.js"></script>
+<script src="js/armas-fogo.js"></script>
+<script src="js/armas-detalhes.js"></script>
+<script src="js/armas-extras.js"></script>
+<script src="js/armas-mods.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/animacao.js"></script>
+<script src="js/maos.js"></script>
+<script src="js/locomocao.js"></script>
+<script src="js/visor.js"></script>
+<script src="js/fisica.js"></script>
+<script>
+/* isolado: outros arquivos já usam nomes como FACES e tom */
+(() => {
+const $ = id => document.getElementById(id);
+const visor = criarVisor($('visor'));
+let quintal, loco, eu, animador, parado, anterior = 0, demo = true, relogioDemo = 0, alvoDemo = 0;
+const teclas = new Set();
+
+function personagem(){
+  const c = structuredClone(PADRAO_WASHINGTON); aplicarKit(c, 'sobrevivente'); c.lapis.usa = false; c.arma.estilo = 'nenhum';
+  const modelo = montar(c); animador = Animacao.animador(modelo); parado = Animacao.parado('nenhum', modelo.mods);
+}
+function arrumar(){ quintal = Fisica.cenario(5); eu = {x:0, z:0}; loco = Locomocao.novo(0); relogioDemo = 0; alvoDemo = 0; }
+
+/* a demonstração vai de um objeto a outro, alternando andar e correr */
+const ROTA = [[-.7, 2.4, false], [.9, 2.4, false], [2.2, 4.3, false], [0, 0, false], [1.7, 3.4, true], [-2.4, 3.6, true], [-3.1, 1.2, true], [1.2, -2.7, true], [-1.8, -2.4, false], [3.2, 1.9, true], [0, 0, false]];
+function comando(dt){
+  if (demo){
+    relogioDemo += dt;
+    const [x, z, corre] = ROTA[alvoDemo], falta = Math.hypot(x - eu.x, z - eu.z);
+    if (falta < .55 || relogioDemo > 4){
+      alvoDemo++; relogioDemo = 0;
+      if (alvoDemo >= ROTA.length){ arrumar(); return {quer:null, correndo:false}; }
+    }
+    return {quer:Math.atan2(x - eu.x, z - eu.z), correndo:corre};
+  }
+  const tem = (...k) => k.some(n => teclas.has(n));
+  const frente = (tem('w', 'arrowup') ? 1 : 0) - (tem('s', 'arrowdown') ? 1 : 0), lado = (tem('d', 'arrowright') ? 1 : 0) - (tem('a', 'arrowleft') ? 1 : 0);
+  const fx = -Math.sin(visor.cam.giro), fz = -Math.cos(visor.cam.giro);
+  return {quer:frente || lado ? Math.atan2(fx * frente - fz * lado, fz * frente + fx * lado) : null, correndo:$('correndo').checked || teclas.has('shift')};
+}
+
+/* tudo numa malha só, com o quintal deslizando para o personagem ficar no meio da tela */
+let malha = new Float32Array(9 * 6000), usados = 0;
+function vertice(p, n, c){
+  if (usados * 9 + 9 > malha.length){ const maior = new Float32Array(malha.length * 2); maior.set(malha); malha = maior; }
+  malha.set(p, usados * 9); malha.set(n, usados * 9 + 3); malha.set(c, usados * 9 + 6); usados++;
+}
+const FACES = [[[-1,0,0], [[0,0,0],[0,0,1],[0,1,1],[0,1,0]]], [[1,0,0], [[1,0,1],[1,0,0],[1,1,0],[1,1,1]]], [[0,1,0], [[0,1,1],[1,1,1],[1,1,0],[0,1,0]]],
+  [[0,0,-1], [[1,0,0],[0,0,0],[0,1,0],[1,1,0]]], [[0,0,1], [[0,0,1],[1,0,1],[1,1,1],[0,1,1]]], [[0,-1,0], [[0,0,0],[1,0,0],[1,0,1],[0,0,1]]]];
+const tom = h => rgb(h).map(v => v / 255);
+/* bloco [x, base, z, larg, alt, fundo, cor]; leva() põe cada canto no lugar, gira() faz o mesmo com a direção da face */
+function bloco([x, y, z, w, h, d, cor], leva, gira){
+  const min = [x - w / 2, y, z - d / 2], tam = [w, h, d], c = tom(cor);
+  for (const [n, cantos] of FACES){
+    const P = cantos.map(q => leva(q.map((v, i) => min[i] + v * tam[i]))), N = gira(n);
+    for (const i of [0, 1, 2, 0, 2, 3]) vertice(P[i], N, c);
+  }
+}
+const igual = n => n;
+function desenharObjeto(o){
+  const s = Math.sin(o.rumo), c = Math.cos(o.rumo), dx = Math.sin(o.dir), dz = Math.cos(o.dir), a = o.tomba, ca = Math.cos(a), sa = Math.sin(a), meia = .22;
+  const alto = 1 - o.amassa, largo = 1 + o.amassa * .55;
+  const girar = v => [v[0] * c + v[2] * s, v[1], v[2] * c - v[0] * s];
+  /* tombar: gira em volta da borda de baixo do lado em que está caindo */
+  const tombar = (v, ponto) => {
+    if (!a) return v;
+    const rx = v[0] - (ponto ? dx * meia : 0), rz = v[2] - (ponto ? dz * meia : 0), u = rx * dx + rz * dz, px = rx - dx * u, pz = rz - dz * u, u2 = u * ca + v[1] * sa, y2 = -u * sa + v[1] * ca;
+    return [px + dx * u2 + (ponto ? dx * meia : 0), y2, pz + dz * u2 + (ponto ? dz * meia : 0)];
+  };
+  const leva = p => { const q = tombar(girar([p[0] * largo, p[1] * alto, p[2] * largo]), true); return [q[0] + o.x - eu.x, q[1] + o.y, q[2] + o.z - eu.z]; };
+  const gira = n => tombar(girar(n), false);
+  for (const b of o.forma) bloco(b, leva, gira);
+}
+function desenharChao(){
+  const m = quintal.meio, plano = p => [p[0] - eu.x, p[1], p[2] - eu.z];
+  for (let i = Math.floor(-m); i < m; i++) for (let k = Math.floor(-m); k < m; k++){
+    const x0 = Math.max(-m, i), x1 = Math.min(m, i + 1), z0 = Math.max(-m, k), z1 = Math.min(m, k + 1), c = tom((i + k) & 1 ? '#8d9096' : '#969a9f');
+    const P = [[x0, -.004, z1], [x1, -.004, z1], [x1, -.004, z0], [x0, -.004, z0]].map(plano);
+    for (const j of [0, 1, 2, 0, 2, 3]) vertice(P[j], [0, 1, 0], c);
+  }
+  /* as bordas são baixas para não tapar a vista */
+  for (const [x, z, w, d] of [[0, m + .09, 2 * m + .36, .18], [0, -m - .09, 2 * m + .36, .18], [m + .09, 0, .18, 2 * m], [-m - .09, 0, .18, 2 * m]]) bloco([x, -.002, z, w, .16, d, '#6f6a62'], plano, igual);
+  for (const p of quintal.paredes) bloco([(p.x0 + p.x1) / 2, -.001, (p.z0 + p.z1) / 2, p.x1 - p.x0, p.h, p.z1 - p.z0, '#9b5440'], plano, igual);
+}
+function desenhar(rot){
+  usados = 0; desenharChao(); for (const o of quintal.objetos) desenharObjeto(o);
+  animador.atualizar(rot, true);
+  const p = animador.pos, n = animador.nor, k = animador.cor, c = Math.cos(loco.rumo), s = Math.sin(loco.rumo), pe = animador.atualizar(rot, true);
+  for (let i = 0, j = 0; i < animador.total; i++, j += 3)
+    vertice([p[j] * c + p[j + 2] * s, p[j + 1] - pe, p[j + 2] * c - p[j] * s], [n[j] * c + n[j + 2] * s, n[j + 1], n[j + 2] * c - n[j] * s], [k[j], k[j + 1], k[j + 2]]);
+  visor.carregarMalha(malha.subarray(0, usados * 9), usados); visor.desenhar(false);
+}
+
+/* um quadro: o jogador anda, a física empurra os objetos e devolve onde ele pode ficar */
+function quadro(dt, mostrar = true){
+  const c = comando(dt), anda = Locomocao.avancar(loco, dt, c.quer, c.correndo), x0 = eu.x, z0 = eu.z;
+  const partes = Math.max(1, Math.ceil(dt / .016)), h = dt / partes;
+  for (let i = 0; i < partes; i++){
+    const j = {x:eu.x + anda.dx / partes, z:eu.z + anda.dz / partes, vx:anda.dx / Math.max(dt, 1e-4), vz:anda.dz / Math.max(dt, 1e-4)};
+    Fisica.passo(quintal, h, j); eu.x = j.x; eu.z = j.z;
+  }
+  const andou = Math.min(Math.hypot(eu.x - x0, eu.z - z0), loco.vel * dt);
+  if (dt > 0 && andou < loco.vel * dt * .35) loco.vel = Math.max(andou / dt, loco.vel - Locomocao.AJUSTES.freio * dt);
+  Locomocao.assentarPasso(loco, dt, andou, anda.falta);
+  if (mostrar) desenhar(Locomocao.pose(loco, parado, 'nenhum', {}));
+}
+function laco(agora){
+  const dt = anterior ? Math.min(.05, (agora - anterior) / 1000) : .016; anterior = agora;
+  quadro(dt);
+  const latas = quintal.objetos.filter(o => o.tipo === 'lata');
+  const texto = 'Latões caídos: ' + latas.filter(Fisica.deitada).length + ' de ' + latas.length + ' · objetos soltos: ' + quintal.objetos.length;
+  if ($('contagem').textContent !== texto) $('contagem').textContent = texto;
+  requestAnimationFrame(laco);
+}
+function modoDemo(ligada){ demo = ligada; $('demo').classList.toggle('ativo', demo); $('demo').textContent = demo ? '✋ Eu quero controlar' : '▶ Demonstração automática'; if (demo){ arrumar(); verDoAlto(); } }
+const verDoAlto = () => Object.assign(visor.cam, {giro:Math.PI + .5, elev:.62, dist:9, alvo:.5});
+const assumir = k => { if (demo && k !== 'shift'){ modoDemo(false); Object.assign(visor.cam, {giro:Math.PI, elev:.48, dist:7, alvo:.7}); } teclas.add(k); };
+const TECLAS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'];
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (e.ctrlKey || e.metaKey || !TECLAS.includes(k)) return; if (k !== 'shift'){ e.preventDefault(); e.stopPropagation(); } assumir(k); }, true);
+addEventListener('keyup', e => teclas.delete(e.key.toLowerCase()), true);
+addEventListener('blur', () => teclas.clear());
+document.querySelectorAll('[data-tecla]').forEach(b => {
+  const solta = () => teclas.delete(b.dataset.tecla);
+  b.addEventListener('pointerdown', e => { b.setPointerCapture(e.pointerId); assumir(b.dataset.tecla); });
+  b.addEventListener('pointerup', solta); b.addEventListener('pointercancel', solta); b.addEventListener('lostpointercapture', solta);
+});
+$('demo').addEventListener('click', () => { modoDemo(!demo); $('demo').blur(); });
+$('arrumar').addEventListener('click', () => { arrumar(); $('arrumar').blur(); });
+if (!visor) $('aviso').textContent = 'Este navegador não conseguiu abrir o desenho em 3D (WebGL).';
+else { personagem(); modoDemo(true); requestAnimationFrame(laco); }
+/* para os testes */
+window.__fisica = {quadro, modoDemo, arrumar, teclas, visor, quintal:() => quintal, eu:() => eu};
+})();
+</script>
+</body>
+</html>

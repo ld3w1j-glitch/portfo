@@ -20,7 +20,7 @@ const Combate = (() => {
     cansado:16,                                   /* abaixo disto os golpes saem lentos e fracos */
     defesa:15, defesaBruta:42, defesaNaHora:.28, custoNaHora:3,
     empurrar:18, empurrarEspera:.75, empurrarAlcance:1.55,
-    esquiva:22, esquivaDura:.3, esquivaAnda:1.5,
+    esquiva:22, esquivaDura:.3, esquivaAnda:1.5, esquivaEspera:1.2,
     pisar:14, pisarAlcance:1.35,
   };
 
@@ -78,7 +78,7 @@ const Combate = (() => {
             reacao:{x:0, vx:0, y:0, vy:0}, pisca:0, tombo:0, paraFrente:false, ronco:1 + semente * 4, rot:null};
   }
   function criar(){
-    return {jog:{vida:J.vida, folego:J.folego, folegoMax:J.folego, doenca:0, infectado:false, agarroes:0, levantando:0, semGasto:9, defendendo:false, tDefesa:9, esquiva:0, esqDir:[0, 0], empurrao:0, atordoado:0, agarrado:null, morto:false, mordidas:0, ferimentos:[]},
+    return {jog:{vida:J.vida, folego:J.folego, folegoMax:J.folego, doenca:0, infectado:false, agarroes:0, levantando:0, semGasto:9, defendendo:false, tDefesa:9, esquiva:0, esquivaPausa:0, esqDir:[0, 0], empurrao:0, atordoado:0, agarrado:null, morto:false, mordidas:0, ferimentos:[]},
             zumbis:[], eventos:[], desgaste:{}, tempo:0, abatidos:0};
   }
   const muda = (z, estado, dura = 0) => { z.estado = estado; z.tempo = 0; z.dura = dura; z.acertou = false; };
@@ -90,6 +90,17 @@ const Combate = (() => {
   function barulho(m, onde, raio){
     for (const z of m.zumbis) if (vivo(z) && z.estado === 'vagando' && dist(z, onde) < raio){ z.alvoRumo = rumoAte(z, onde); muda(z, 'alerta', .5 + z.semente * .6); evento(m, 'ronco', {z, tipo2:'ronco'}); }
   }
+
+  /* segue o caminho do abrigo até um alvo. true = há parede no meio e ele já decidiu o que fazer */
+  function peloCaminho(m, z, alvo, agora, qual){
+    const guia = m.abrigo ? m.abrigo.guiar(z, alvo, agora, qual) : null; if (!guia) return null;
+    if (guia.pular){ z.salto = {de:{x:z.x, z:z.z}, ate:guia.pular.ate, sill:guia.pular.sill}; muda(z, 'pulando', 1.5); return {rumo:null, quer:0}; }
+    const rumo = rumoAte(z, guia.alvo), torto = Math.abs(angulo(rumo - z.rumo));
+    if (guia.bater){ if (torto < .7){ z.barreira = guia.bater; muda(z, 'batendo', z.t.bruto ? 1.7 : 1.2 + z.semente * .3); } return {rumo, quer:0}; }
+    return {rumo, quer:torto < .8 ? 1 : torto < 1.6 ? .45 : .1};
+  }
+  /* a isca tocando mais perto, se houver alguma ao alcance do ouvido */
+  const iscaDe = (m, z) => (m.iscas || []).filter(i => dist(z, i) < i.raio).sort((a, b) => dist(z, a) - dist(z, b))[0] || null;
 
   /* ---------------------------------------------------------------- fôlego */
   const gastar = (m, n) => { m.jog.folego = Math.max(0, m.jog.folego - n); m.jog.semGasto = 0; };
@@ -184,7 +195,9 @@ const Combate = (() => {
   /* lado = [frente, direita] pedidos; sem nada, pula para trás */
   function esquivar(m, p, frente, direita){
     const j = m.jog; if (j.esquiva > 0 || j.agarrado || j.levantando > 0 || j.morto || j.folego < J.esquiva * .5) return false;
-    gastar(m, J.esquiva); j.esquiva = J.esquivaDura;
+    /* um tempo para firmar os pés antes da próxima */
+    if (j.esquivaPausa > 0){ evento(m, 'esquivaCedo'); return false; }
+    gastar(m, J.esquiva); j.esquiva = J.esquivaDura; j.esquivaPausa = J.esquivaDura + J.esquivaEspera;
     let f = frente, d = direita; if (!f && !d) f = -1;
     const n = Math.hypot(f, d); f /= n; d /= n;
     const s = Math.sin(p.rumo), c = Math.cos(p.rumo);
@@ -271,7 +284,7 @@ const Combate = (() => {
   }
   function golpearJogador(m, z, p){
     const j = m.jog;
-    if (j.morto || dist(z, p) > z.t.alcance + .34 || Math.abs(angulo(rumoAte(z, p) - z.rumo)) > .85){ evento(m, 'errou', {z}); return; }
+    if (j.morto || p.alto || m.abrigo && !m.abrigo.visao(z, p) || dist(z, p) > z.t.alcance + .34 || Math.abs(angulo(rumoAte(z, p) - z.rumo)) > .85){ evento(m, 'errou', {z}); return; }
     if (j.esquiva > 0){ evento(m, 'esquivou', {z}); return; }
     if (j.agarrado){ const g = j.agarrado; g.forca = Math.max(0, g.forca - .14); ferir(m, z.t.dano * (g.noChao ? .85 : .6), z, p, 'cercado'); return; }
     const defende = j.defendendo && j.levantando <= 0 && frenteDe(p, z, 1.25), naHora = defende && j.tDefesa < J.defesaNaHora;
@@ -302,6 +315,12 @@ const Combate = (() => {
     r.x = preso(r.x, -.8, .8); r.y = preso(r.y, -.8, .8);
     z.equilibrio = Math.min(t.equilibrio, z.equilibrio + t.equilibrio * .2 * dt);
     let quer = 0, rumo = null, giro = z.rastejando ? 1.6 : t.bruto ? 2.2 : 3.4;
+    z.travado = Math.max(0, (z.travado || 0) - dt); z.lento = Math.max(0, (z.lento || 0) - dt);
+    /* o barulho da isca puxa quem não está em cima do sobrevivente */
+    if (z.estado === 'vagando' || z.estado === 'alerta' || z.estado === 'perseguindo'){
+      const isca = iscaDe(m, z);
+      if (isca && !(d < 2.4 && (!m.abrigo || m.abrigo.visao(z, p)))){ z.isca = isca; muda(z, 'atraido'); evento(m, 'ronco', {z, tipo2:'ronco'}); }
+    }
     const livre = () => m.zumbis.filter(o => o !== z && (o.estado === 'preparando' || o.estado === 'atacando' || o.estado === 'agarrando')).length < vagas(m, p);
     switch (z.estado){
       case 'vagando':
@@ -315,11 +334,14 @@ const Combate = (() => {
       case 'perseguindo': {
         rumo = para;
         if (m.jog.morto){ muda(z, 'vagando'); break; }
+        /* com parede no meio, vai pela entrada mais fácil: porta aberta, janela quebrada ou a barreira mais fraca */
+        const volta = m.jog.agarrado ? null : peloCaminho(m, z, p, m.tempo);
+        if (volta){ rumo = volta.rumo; quer = volta.quer; break; }
         const meuAlcance = z.rastejando ? .95 : t.alcance;
         const preso_ = m.jog.agarrado, alcanca = d <= meuAlcance + (preso_?.noChao ? .25 : 0);
         if (alcanca && Math.abs(angulo(para - z.rumo)) < .6 && z.espera <= 0){
           /* com o sobrevivente agarrado de pé, os outros chegam e esperam; com ele no chão, um deles vem bater */
-          if ((!preso_ || preso_.noChao) && livre()){ z.agarrao = !z.rastejando && !z.semBraco && acaso() < t.agarra; muda(z, 'preparando', t.preparo * (z.rastejando ? 1.2 : .9 + acaso() * .25)); evento(m, 'vaiAtacar', {z}); }
+          if (!p.alto && (!m.abrigo || m.abrigo.visao(z, p)) && (!preso_ || preso_.noChao) && livre()){ z.agarrao = !z.rastejando && !z.semBraco && acaso() < t.agarra; muda(z, 'preparando', t.preparo * (z.rastejando ? 1.2 : .9 + acaso() * .25)); evento(m, 'vaiAtacar', {z}); }
           else quer = 0;
         } else if (!livre() && d < 2.3){
           /* esperando a vez: rodeia para o lado e para as costas, onde não dá para defender */
@@ -327,6 +349,32 @@ const Combate = (() => {
           rumo = rumoAte(z, meta); quer = dist(z, meta) > .25 ? .75 : 0; if (!quer) rumo = para;
         }
         else quer = 1;
+        break;
+      }
+      case 'atraido': {
+        const isca = z.isca;
+        if (!isca || !(m.iscas || []).includes(isca)){ z.isca = null; muda(z, 'vagando'); z.alvoRumo = z.rumo; break; }
+        /* se der de cara com o sobrevivente, esquece o barulho */
+        if (!m.jog.morto && d < 2.2 && (!m.abrigo || m.abrigo.visao(z, p))){ z.isca = null; muda(z, 'alerta', .3); break; }
+        if (dist(z, isca) < .75){ rumo = rumoAte(z, isca); quer = 0; break; }
+        const volta = peloCaminho(m, z, isca, m.tempo, 'isca');
+        if (volta){ rumo = volta.rumo; quer = volta.quer; break; }
+        rumo = rumoAte(z, isca); quer = Math.abs(angulo(rumo - z.rumo)) < 1.2 ? .95 : .25;
+        break;
+      }
+      case 'batendo': {
+        const o = z.barreira;
+        if (!m.abrigo || !o || !m.abrigo.aindaFechada(z, o)){ muda(z, 'perseguindo'); break; }
+        rumo = rumoAte(z, o); giro = 3;
+        if (!z.acertou && z.tempo >= z.dura * .62){ z.acertou = true; const res = m.abrigo.bater(z, o); evento(m, 'barreira', {z, o, res}); }
+        if (z.tempo >= z.dura) muda(z, 'perseguindo');
+        break;
+      }
+      case 'pulando': {
+        const s_ = z.salto, u = preso(z.tempo / z.dura, 0, 1), k = suave(u);
+        z.x = s_.de.x + (s_.ate.x - s_.de.x) * k; z.z = s_.de.z + (s_.ate.z - s_.de.z) * k; z.alto = Math.sin(Math.PI * u) * s_.sill * .82;
+        rumo = rumoAte(s_.de, s_.ate); giro = 9; z.vel = 0;
+        if (u >= 1){ z.alto = 0; z.salto = null; muda(z, 'perseguindo'); z.espera = .5; }
         break;
       }
       case 'preparando':
@@ -353,10 +401,12 @@ const Combate = (() => {
       case 'morrendo': if (z.tempo >= z.dura) muda(z, 'morto'); break;
     }
     z.espera = Math.max(0, z.espera - dt);
+    if (z.estado !== 'pulando' && z.alto){ z.alto = 0; z.salto = null; }            /* derrubado no meio do salto */
     if (rumo !== null) z.rumo = angulo(z.rumo + preso(angulo(rumo - z.rumo), -giro * dt, giro * dt));
-    const maxima = z.rastejando ? .34 : t.vel * (z.estado === 'perseguindo' && d > 2.4 ? 1.22 : 1);
+    const maxima = (z.rastejando ? .34 : t.vel * (z.estado === 'perseguindo' && d > 2.4 ? 1.22 : 1)) * (z.lento > 0 ? .45 : 1);
     z.vel = puxa(z.vel, quer * maxima, 6, dt);
     let vx = Math.sin(z.rumo) * z.vel, vz = Math.cos(z.rumo) * z.vel;
+    if (z.travado > 0){ vx = vz = 0; z.vel = 0; z.empurrado = null; }                    /* o pé está preso */
     if (z.empurrado){ z.empurrado.t -= dt; const k = Math.max(0, z.empurrado.t / .3); vx += z.empurrado.vx * k; vz += z.empurrado.vz * k; if (z.empurrado.t <= 0) z.empurrado = null; }
     if (vivo(z)){ z.x += vx * dt; z.z += vz * dt; }
     z.passo += dt * (z.rastejando ? 3.2 : 2 + z.vel * 3.2) * (z.vel > .05 ? 1 : .15);
@@ -367,7 +417,7 @@ const Combate = (() => {
   function passo(m, p, dt, empurra, acaso = Math.random){
     const j = m.jog; m.tempo += dt;
     j.tDefesa = p.defendendo ? (j.defendendo ? j.tDefesa + dt : 0) : 9; j.defendendo = !!p.defendendo && !j.agarrado && j.atordoado <= 0;
-    j.semGasto += dt; j.empurrao = Math.max(0, j.empurrao - dt); j.esquiva = Math.max(0, j.esquiva - dt); j.atordoado = Math.max(0, j.atordoado - dt);
+    j.semGasto += dt; j.empurrao = Math.max(0, j.empurrao - dt); j.esquiva = Math.max(0, j.esquiva - dt); j.esquivaPausa = Math.max(0, j.esquivaPausa - dt); j.atordoado = Math.max(0, j.atordoado - dt);
     if (p.correndo && p.andando) gastar(m, J.correr * dt);
     else if (j.semGasto > J.espera && !j.agarrado) j.folego = j.folego + (j.defendendo ? J.voltaDefendendo : p.andando ? J.volta * .6 : J.volta) * (j.doenca >= 2 ? .5 : j.doenca === 1 ? .72 : 1) * dt;
     j.folego = Math.min(j.folego, j.folegoMax * (j.doenca >= 2 ? .72 : j.doenca === 1 ? .88 : 1));
@@ -375,7 +425,7 @@ const Combate = (() => {
     if (j.agarrado) disputar(m, p, dt, acaso);
     for (const z of m.zumbis) if (z.estado !== 'morto') pensar(m, z, p, dt, acaso); else z.tempo += dt;
     /* ninguém ocupa o mesmo lugar */
-    const vivos = m.zumbis.filter(z => vivo(z) && !z.rastejando && z.estado !== 'caido');
+    const vivos = m.zumbis.filter(z => vivo(z) && !z.rastejando && z.estado !== 'caido' && z.estado !== 'pulando');
     for (let i = 0; i < vivos.length; i++){
       const a = vivos[i];
       for (let k = i + 1; k < vivos.length; k++){
@@ -392,7 +442,7 @@ const Combate = (() => {
         if (p.andando && j.agarrado && !j.agarrado.noChao) for (const b of vivos) if (b !== a && b.estado !== 'agarrando' && dist(a, b) < .7){ b.equilibrio -= 90 * dt; if (b.equilibrio <= 0){ b.equilibrio = b.t.equilibrio; muda(b, 'cambaleando', 1.0); const r = rumoAte(a, b); b.empurrado = {vx:Math.sin(r) * 2.4, vz:Math.cos(r) * 2.4, t:.25}; evento(m, 'trombou', {z:b}); } }
       } else if (d < min){ a.x = p.x + dx / d * min; a.z = p.z + dz / d * min; }
     }
-    if (empurra) for (const z of m.zumbis) if (vivo(z)) empurra(z, .3);
+    if (empurra) for (const z of m.zumbis) if (vivo(z) && z.estado !== 'pulando') empurra(z, .3);
   }
 
   /* ---------------------------------------------------------------- poses
@@ -434,6 +484,26 @@ const Combate = (() => {
       if (z.agarrao){ o.torax = [.5 * k, 0, 0]; o.cabeca = [-.35, 0, 0]; Object.assign(o, {braco_d:[-1.55, 0, lerp(-.75, .2, k)], antebraco_d:[-.55 * k], braco_e:[-1.55, 0, lerp(.75, -.2, k)], antebraco_e:[-.55 * k]}); }
       else if (z.t.bruto){ o.torax = [lerp(-.38, .78, k), 0, 0]; bracos(lerp(-2.85, -.55, k), lerp(-2.85, -.55, k), -.3, -.3, .15); }
       else { o.torax = [.5 * k, lerp(.45, -.5, k) * manco, 0]; const a = lerp(-2.75, -.55, k); bracos(manco > 0 ? a : -.8, manco > 0 ? -.8 : a, -.25, -.25, .1); }
+    }
+    if (z.estado === 'atraido' && z.vel < .2){
+      /* parado em cima do barulho: curvado, tateando o chão */
+      const vai = Math.sin(t * 3.2);
+      o.torax = [.55 + vai * .08, vai * .25, 0]; o.cabeca = [.25, -vai * .3, manco * .2]; bracos(-1.0 - vai * .35, -1.0 + vai * .35, -.5, -.5, .12);
+    }
+    if (z.travado > 0 && z.estado !== 'caido'){ const puxao = Math.sin(t * 11) * .12; o.coxa_d = [-.5 + puxao]; o.canela_d = [.7]; o.coxa_e = [.3]; o.canela_e = [.2]; }
+    if (z.estado === 'batendo'){
+      /* o grandalhão ergue os dois braços; os outros socam um de cada vez */
+      const u = z.tempo / z.dura, arma_ = u < .5 ? suave(u / .5) : u < .62 ? 1 - suave((u - .5) / .12) : 0, vai = u >= .5 && u < .85 ? suave((u - .5) / .12) * (1 - suave((u - .72) / .13)) : 0;
+      pressa = 26;
+      if (z.t.bruto){ o.torax = [.16 - arma_ * .5 + vai * .55, 0, 0]; o.cabeca = [-.25, 0, 0]; const a = -1.3 - arma_ * 1.5 + vai * .55; bracos(a, a, -.45 + vai * .3, -.45 + vai * .3, .18); }
+      else { o.torax = [.18 + vai * .28, (arma_ * .3 - vai * .35) * manco, 0]; o.cabeca = [-.2, 0, manco * .2]; const a = -1.35 - arma_ * 1.1 - vai * .1; bracos(manco > 0 ? a : -1.2, manco > 0 ? -1.2 : a, -.4 - arma_ * .7, -.4 - arma_ * .7, .08); }
+      o.coxa_d = [-.35]; o.canela_d = [.35]; o.coxa_e = [.25]; o.canela_e = [.2];
+    }
+    if (z.estado === 'pulando'){
+      const k = Math.sin(Math.PI * preso(z.tempo / z.dura, 0, 1));
+      pressa = 18;
+      o.torax = [.2 + k * .75, 0, manco * .12 * k]; o.cabeca = [-.2 - k * .5, 0, 0]; o.coxa_d = [-1.35 * k]; o.canela_d = [.15 + 1.6 * k]; o.coxa_e = [-.7 * k]; o.canela_e = [.1 + 1.8 * k];
+      bracos(-1.4 - k * .5, -1.4 - k * .5, -.35, -.35, .2);
     }
     if (z.estado === 'recuperando'){ const k = 1 - suave(z.tempo / Math.max(.2, z.dura)); o.torax = [.16 + .4 * k, 0, 0]; bracos(-.55 - (1 - k) * .6, -.65 - (1 - k) * .6); }
     if (z.estado === 'agarrando'){
@@ -480,5 +550,5 @@ const Combate = (() => {
     return {rot:montarPose(o), tombo, pressa};
   }
 
-  return {J, G, CONDICOES, ETAPAS, condicao, dormir, vagas, ARMAS_PERTO, TIPOS, armaDePerto, criar, novoZumbi, passo, barulho, comecouGolpe, acertar, desgastar, resistencia, cansado, empurrar, esquivar, pisar, lutar, vivo, noChao, ZONA, pose, golpearJogador, muda};
+  return {J, G, CONDICOES, ETAPAS, condicao, dormir, vagas, ARMAS_PERTO, TIPOS, armaDePerto, criar, novoZumbi, passo, barulho, comecouGolpe, acertar, desgastar, resistencia, cansado, empurrar, esquivar, pisar, lutar, matar, derrubar, ferir, vivo, noChao, ZONA, pose, golpearJogador, muda};
 })();

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>WO · Primeira pessoa</title>
 <link rel="stylesheet" href="estilo.css">
 <style>
@@ -76,9 +76,27 @@
   #fim button{background:var(--laranja);color:var(--grafite);border:0;padding:13px 24px;font:800 16px Inter,system-ui,sans-serif;cursor:pointer}
   .arena #convite{display:none}
   .terceira #ponto,.terceira #cruz,.terceira #marca{display:none}
+  /* retículos e marcas de distância são só da visão pelos olhos */
+  .terceira #reticulo,.terceira #luneta,.terceira #foco{display:none!important}
+  /* mirando por cima do ombro, a cruz volta */
+  .terceira.mira3 #cruz{display:block;opacity:1!important;--folga:5px!important}
   .terceira #barra{top:auto;bottom:96px}
+  #barra.alta{top:calc(50% - 44px);bottom:auto}
   .terceira #agarrao{bottom:auto;top:84px}
   .terceira #mensagem{top:auto;bottom:118px}
+  /* cena única: junta o combate com as armas de fogo, os alvos e o movimento completo */
+  .so-cena{display:none}
+  .cena .so-cena{display:block}
+  .cena .botoes.so-cena{display:grid}
+  .cena #cenario,.cena label[for=cenario]{display:none}
+  .arena.cena #peca_mira,.arena.cena #peca_ponta,.arena.cena #peca_baixo,.arena.cena #peca_carregador,.arena.cena label[for^="peca_"]{display:block}
+  .arena.cena #recarregarTela{display:inline-block}
+  .arena.cena #canto{display:block;bottom:12px}
+  .cena #demo,.cena .so-luta{display:none!important}
+  .cena #leituraCena{left:12px;top:70px;font-size:13px;max-width:min(520px,70%);border-left:5px solid #8f939b}
+  .cena #leituraCena.verde{border-left-color:#2fbf55}.cena #leituraCena.vermelho{border-left-color:#d6392b}.cena #leituraCena.amarelo{border-left-color:#e8b81e}
+  .cena #leituraCena span{color:#ffb4a8;font-weight:700}
+  .cena.terceira #agarrao{top:128px}
   [hidden]{display:none!important}
   @media(max-width:900px){.app{grid-template-columns:1fr}.tela{height:62vh;flex:none}#convite{display:none}}
 </style>
@@ -96,6 +114,7 @@
       <div class="sobre so-arena" id="danoTela"></div>
       <div class="sobre so-arena" id="danoDirecao"><i></i></div>
       <div class="sobre so-arena caixa" id="estadoCaixa"><span id="estadoTexto"></span></div>
+      <div class="sobre caixa so-cena" id="leituraCena" role="status"></div>
       <div class="sobre so-arena" id="barras">
         <label>Vida</label><div class="barra vida"><span id="barraVida"></span></div>
         <label>Fôlego</label><div class="barra folego"><span id="barraFolego"></span><em id="folegoPerdido" title="Fôlego máximo gasto: volta dormindo"></em></div>
@@ -130,6 +149,34 @@
     <div id="conteudo">
       <button type="button" class="larga" id="demo">▶ Demonstração automática</button>
       <div class="so-arena">
+        <div class="so-cena">
+          <span class="rotulo">Zumbis (aparecem na área marcada em vermelho)</span>
+          <div class="botoes so-cena">
+            <button type="button" id="soltarUm">Soltar 1</button><button type="button" id="soltarTres">Soltar 3</button>
+            <button type="button" id="soltarHorda">Soltar horda</button><button type="button" id="tirarZumbis">Tirar todos</button>
+          </div>
+          <div class="botoes so-cena">
+            <button type="button" id="pularTela">Pular / agarrar (espaço)</button><button type="button" id="cordaTela">Corda (G)</button>
+            <button type="button" id="tratarTela">Tratar (T)</button><button type="button" id="arrumarObjetos">Arrumar objetos</button>
+          </div>
+          <span class="rotulo">Abrigo (portas, janelas e madeira)</span>
+          <div class="botoes so-cena">
+            <button type="button" id="irAbrigo">Ir para dentro da casa</button><button type="button" id="madeiraTeste">+10 tábuas (teste)</button>
+            <button type="button" id="cercarCasa">Zumbis na casa (4)</button><button type="button" id="grandaoNaCasa">Grandalhão na casa</button>
+            <button type="button" id="interagirTela">Usar (E)</button>
+          </div>
+          <p class="nota">As portas começam fechadas. Chegue perto e aperte <b>E</b> para abrir, pegar madeira, tapar ou consertar. Um golpe ou tiro quebra o vidro; <b>Espaço</b> pula a janela quebrada. Casa tapada segura zumbi comum; o grandalhão tira <b>4</b> por pancada das tábuas (20) e da porta (20).</p>
+          <span class="rotulo">Armadilhas (escolha e use)</span>
+          <div class="botoes so-cena">
+            <button type="button" id="armIsca" data-armadilha="isca">Isca de barulho</button><button type="button" id="armPregos" data-armadilha="pregos">Lata de pregos</button>
+            <button type="button" id="armUrso" data-armadilha="urso">Armadilha de urso</button><button type="button" id="armTabua" data-armadilha="tabua">Tábua com pregos</button>
+            <button type="button" id="armFio" data-armadilha="fio">Fio com latas</button><button type="button" id="usarArmadilhaTela">Usar (X)</button>
+            <button type="button" id="reporArmadilhas">Repor (teste)</button>
+          </div>
+          <p class="nota"><b>Z</b> troca de armadilha e <b>X</b> usa. A isca é arremessada para onde você olha; as outras são postas no chão à sua frente (andar cancela). <b>E</b> perto recolhe. Só inimigo dispara, mas o <b>estouro da lata machuca você</b> se estiver perto, quebra vidros e faz muito barulho.</p>
+          <button type="button" class="larga" id="outraCena">⟳ Gerar outro cenário</button>
+          <p class="nota"><b>WASD</b> anda, <b>Shift</b> corre, <b>C</b> abaixa, <b>Espaço</b> pula ou agarra, <b>G</b> corda, <b>T</b> trata. <b>Clique</b> ataca ou atira, <b>botão direito</b> defende ou mira, <b>Q + direção</b> esquiva, <b>F</b> empurra, <b>E</b> usa porta e janela ou pisa no caído, <b>R</b> recarrega, <b>V</b> câmera, rodinha troca de arma. Perto de zumbi, atacando ou mirando, ele fica <b>em guarda</b>; correndo para a frente, sai dela.</p>
+        </div>
         <label class="rotulo" for="camera">Câmera (tecla V troca)</label>
         <select id="camera"></select>
         <label class="rotulo" for="cenario">Situação</label>
@@ -142,7 +189,7 @@
         </div>
         <button type="button" class="larga" id="recomecar">↻ Recomeçar a luta</button>
         <label class="marcar"><input id="avisoVisual" type="checkbox" checked> Ajuda visual: zumbi pisca antes de atacar</label>
-        <p class="nota"><b>Clique</b>: golpear (segure: golpe forte) · <b>botão direito</b>: defender, na hora certa ele cambaleia · <b>F</b>: empurrar · <b>espaço + direção</b>: esquivar · <b>E</b>: pisar em quem caiu. <b>Agarrado:</b> clique repetidamente e use WASD para arrastar o zumbi.</p>
+        <p class="nota so-luta" style="display:block"><b>Clique</b>: golpear (segure: golpe forte) · <b>botão direito</b>: defender, na hora certa ele cambaleia · <b>F</b>: empurrar · <b>espaço + direção</b>: esquivar · <b>E</b>: pisar em quem caiu. <b>Agarrado:</b> clique repetidamente e use WASD para arrastar o zumbi.</p>
       </div>
       <label class="marcar so-estande"><input id="todas" type="checkbox"> Na demonstração, passar por todas as armas</label>
       <label class="rotulo" for="arma">Arma</label>
@@ -198,8 +245,21 @@
 <script src="js/som.js"></script>
 <script src="js/combate.js"></script>
 <script src="js/terceira.js"></script>
+<script src="js/parkour.js"></script>
+<script src="js/rapel.js"></script>
+<script src="js/saude.js"></script>
+<script src="js/mundo-nucleo.js"></script>
+<script src="js/mundo-carros.js"></script>
+<script src="js/mundo-casas.js"></script>
+<script src="js/mundo-objetos.js"></script>
+<script src="js/fisica.js"></script>
+<script src="js/abrigo.js"></script>
+<script src="js/armadilhas.js"></script>
+<script src="js/cena.js"></script>
+<script src="js/ragdoll.js"></script>
 <script src="js/arena.js"></script>
 <script src="js/efeitos.js"></script>
 <script src="js/estande.js"></script>
+<script src="js/celular.js"></script>
 </body>
 </html>

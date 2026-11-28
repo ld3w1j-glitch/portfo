@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WO · Área de teste</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{color-scheme:dark}
+  :root{--fundo:#17171a;--caixa:#232327;--linha:#3a3a40;--texto:#f5f5ef;--cinza:#a9aab0;--laranja:#f16a32;--verde:#2fbf55;--amarelo:#e8b81e}
+  html,body{height:100%}
+  body{background:var(--fundo);color:var(--texto);font:15px 'Segoe UI',system-ui,sans-serif}
+  .tudo{display:grid;grid-template-rows:auto auto 1fr auto;height:100vh;height:100dvh}
+  header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--linha)}
+  h1{font-size:19px;text-transform:uppercase;margin-right:auto}
+  h1 span{color:var(--laranja)}
+  button,.botao{background:var(--caixa);color:inherit;border:1px solid var(--linha);padding:9px 13px;font:700 14px 'Segoe UI',system-ui,sans-serif;cursor:pointer;text-decoration:none}
+  button:hover,.botao:hover,button:focus-visible,.botao:focus-visible{border-color:var(--laranja);outline:none}
+  button.forte{background:var(--laranja);border-color:var(--laranja);color:#17171a}
+  #estacoes{display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;border-bottom:1px solid var(--linha)}
+  #estacoes button{padding:6px 10px;font-size:13px}
+  @media(max-width:800px){#estacoes{flex-wrap:nowrap;overflow-x:auto}}
+  #estacoes button{white-space:nowrap;display:flex;gap:7px;align-items:center}
+  #estacoes button.ativo{border-color:var(--laranja);background:#33231c}
+  .bola{width:10px;height:10px;background:#55565d;flex:none}
+  .bola.aprovado{background:var(--verde)}.bola.ajustar{background:var(--amarelo)}.bola.mudou{background:#d6392b}
+  .meio{position:relative;min-height:0;background:#0f0f11}
+  iframe{display:block;width:100%;height:100%;border:0}
+  .semTela{display:grid;place-content:center;gap:10px;height:100%;padding:24px;text-align:center;color:var(--cinza)}
+  footer{border-top:1px solid var(--linha);max-height:44vh;overflow:auto}
+  .barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px}
+  .barra strong{margin-right:auto}
+  #detalhes{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;padding:4px 14px 14px}
+  #detalhes p{color:var(--cinza);font-size:14px;margin-bottom:8px}
+  #conferir label{display:flex;gap:9px;align-items:flex-start;margin-bottom:6px;cursor:pointer}
+  #conferir input{width:17px;height:17px;margin-top:2px;accent-color:var(--laranja);flex:none}
+  textarea{width:100%;min-height:70px;background:var(--caixa);color:inherit;border:1px solid var(--linha);padding:9px;font:inherit}
+  dialog{background:var(--caixa);color:var(--texto);border:2px solid var(--laranja);padding:20px;max-width:640px;width:calc(100% - 32px);margin:auto}
+  dialog::backdrop{background:rgba(0,0,0,.65)}
+  dialog h2{font-size:19px;margin-bottom:10px}
+  dialog ul{margin:0 0 12px 20px;color:#d8d8d2}
+  dialog p{margin-bottom:12px;color:var(--cinza);font-size:14px}
+  [hidden]{display:none!important}
+  @media(max-width:800px){#detalhes{grid-template-columns:1fr}h1{width:100%}}
+</style>
+</head>
+<body>
+<div class="tudo">
+  <header>
+    <h1>Área de <span>teste</span></h1>
+    <span id="placar" role="status"></span>
+    <button type="button" class="forte" id="exportar">Exportar aprovados para o Unity</button>
+    <a class="botao" href="inicio.html">← Ferramentas</a>
+  </header>
+  <nav id="estacoes" aria-label="Estações de teste"></nav>
+  <div class="meio" id="meio"></div>
+  <footer>
+    <div class="barra">
+      <strong id="nome"></strong>
+      <button type="button" id="aprovar">✓ Aprovado</button>
+      <button type="button" id="ajustar">! Precisa ajustar</button>
+      <button type="button" id="limpar">Limpar</button>
+      <button type="button" id="recarregar">↻ Recomeçar</button>
+      <a class="botao" id="sozinha" target="_blank" rel="noopener">Abrir sozinha</a>
+      <button type="button" id="verlista" aria-expanded="true">O que conferir ▾</button>
+    </div>
+    <div id="detalhes">
+      <div><p id="resumo"></p><div id="conferir"></div></div>
+      <div><p id="situacao" role="status"></p><textarea id="nota" aria-label="Sua anotação sobre esta estação" placeholder="O que precisa ajustar? (fica salvo só neste navegador)"></textarea></div>
+    </div>
+  </footer>
+</div>
+<dialog id="saida">
+  <h2>Exportar para o Unity</h2>
+  <div id="oquevai"></div>
+  <p>O arquivo leva os <b>números ajustados</b> (velocidades, pulo, corda, queda, armas, combate, física) só das estações aprovadas. Animações, desenhos e regras em código não vão nele: no Unity são refeitos em C#, usando estas telas como referência. O mapa em 3D sai pelo "Pacote para jogo" do gerador de mundo.</p>
+  <div class="barra" style="padding:0"><button type="button" class="forte" id="baixar">Salvar arquivo</button><button type="button" id="fechar">Fechar</button></div>
+</dialog>
+
+<script src="js/dados.js"></script>
+<script src="js/opcoes.js"></script>
+<script src="js/rosto.js"></script>
+<script src="js/roupas.js"></script>
+<script src="js/equipamentos.js"></script>
+<script src="js/variacoes.js"></script>
+<script src="js/conjuntos.js"></script>
+<script src="js/faccoes.js"></script>
+<script src="js/policia.js"></script>
+<script src="js/quimicos.js"></script>
+<script src="js/armas.js"></script>
+<script src="js/armas-fogo.js"></script>
+<script src="js/armas-detalhes.js"></script>
+<script src="js/armas-extras.js"></script>
+<script src="js/armas-mods.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/animacao.js"></script>
+<script src="js/maos.js"></script>
+<script src="js/locomocao.js"></script>
+<script src="js/zumbi.js"></script>
+<script src="js/validar.js"></script>
+<script src="js/parkour.js"></script>
+<script src="js/rapel.js"></script>
+<script src="js/coldre.js"></script>
+<script src="js/saude.js"></script>
+<script src="js/primeira.js"></script>
+<script src="js/combate.js"></script>
+<script src="js/fisica.js"></script>
+<script src="js/abrigo.js"></script>
+<script src="js/armadilhas.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const GUARDA = 'wo-testes';
+const fichas = filtro => Object.fromEntries(['nenhum', ...Object.keys(ARMAS)].map(id => [id, Primeira.ficha(id)]).filter(([, f]) => f && filtro(f)));
+
+/* cada estação: onde abre, o que conferir e quais números vão para o Unity quando aprovada */
+const ESTACOES = [
+  {id:'cena', nome:'★ Cena única', url:'tiro.html?cena', resumo:'Tudo junto num terreno só: andar, correr, abaixar, pular, agarrar, corda, queda, objetos com física, zumbis e tiro nos alvos. Nova: ainda não foi aprovada.',
+    conferir:['Sair do combate correndo e subir num muro', 'Golpear andando: as pernas continuam andando', 'Em guarda perto do zumbi: anda de lado e de costas', 'Agarrado correndo: puxar para trás com S', 'Subir na torre: o zumbi não alcança', 'Queda machuca a perna e a vida; T trata', 'Latão derrubado faz barulho e chama zumbi', 'Trocar para uma arma de fogo e atirar nos alvos'],
+    dados:() => ({locomocao:Locomocao.AJUSTES, parkour:Parkour.AJUSTES, rapel:Rapel.AJUSTES, saude:Saude.AJUSTES, fisica:Fisica.AJUSTES, combate:{jogador:Combate.J, zumbis:Combate.TIPOS, agarrao:Combate.G}})},
+  {id:'abrigo', nome:'Abrigo: portas e janelas', url:'tiro.html?cena&arma=taco_pregos', resumo:'No painel da direita: "Ir para dentro da casa", "+10 tábuas", "Zumbis na casa" e "Grandalhão na casa". Casa tapada segura zumbi comum; o grandalhão tira 4 por pancada. Os outros números são provisórios.',
+    conferir:['A porta fechada barra a entrada; E abre e fecha', 'Golpe ou tiro quebra o vidro; Espaço pula a janela quebrada', 'Pegar madeira nos montes com fita amarela', 'Tapar janela com E; andar cancela', 'Com tudo tapado, zumbi comum não entra', 'Janela sem tábua: eles quebram o vidro e pulam', 'Grandalhão tira 4 por pancada da janela e da porta'],
+    dados:() => ({abrigo:Abrigo.NUM})},
+  {id:'celular', nome:'Modo celular', url:'tiro.html?cena&celular=1', resumo:'Analógico para andar, arrastar para olhar, botões de ação e o menu ☰ com as opções. No celular de verdade liga sozinho. Em "Controles" estão o mapa dos botões e o editor.',
+    conferir:['Andar com o analógico e correr levando até a borda', 'Olhar arrastando enquanto anda', 'Cada botão faz o que diz', 'Usar acende perto de porta, janela e madeira', 'Menu ☰ em abas', 'Mudar botões de lugar e voltar ao padrão', 'Celular em pé e deitado'], dados:() => ({botoes:'ver js/celular.js, lista BOTOES'})},
+  {id:'armadilhas', nome:'Armadilhas e isca', url:'tiro.html?cena&arma=taco_pregos', resumo:'No painel da direita, em "Armadilhas": escolha e aperte X (Z troca, E recolhe). Solte zumbis para testar; "Repor" devolve o estoque. Todos os números são provisórios.',
+    conferir:['A isca é arremessada, toca e atrai os zumbis', 'A lata só estoura quando um inimigo passa perto', 'O estouro derruba o grupo, quebra vidro e machuca você de perto', 'A armadilha de urso prende; o grandalhão escapa antes', 'A tábua de pregos fere a perna e deixa lento; gasta com o uso', 'O fio derruba; o grandalhão só cambaleia', 'Andar cancela; E recolhe; não dá para pôr na parede', 'O visual de cada uma no chão'],
+    dados:() => ({armadilhas:Armadilhas.TIPOS})},
+  {id:'vegetacao', nome:'Vegetação nova', url:'tiro.html?cena', resumo:'Árvores, ipês, mangueira, bananeira, arbustos, mato e flores refeitos em blocos, com três variações. O mapa grande usa as mesmas plantas.',
+    conferir:['Copas com volume, sem faces piscando', 'Ipês com pétalas no chão', 'Bananeira, arbusto, mato alto e flores', 'No "Mapa e ruas", as plantas e a fluidez'], dados:null},
+  {id:'armasDeMao', nome:'Arco, silêncio e recarga', url:'tiro.html?cena&arma=arco&camera=primeira', resumo:'Arco e estilingue em 1ª pessoa, armas feitas à mão silenciosas, e a recarga com o pente saindo da arma. Troque de arma com a rodinha e de câmera com V.',
+    conferir:['A flecha e a pedra apontam para a mira', 'Arco, estilingue, besta e lança não chamam zumbi de longe', 'Pular em 1ª pessoa não troca a câmera', 'Pente vazio: ele olha o pente antes de trocar', 'O pente sai sem deixar pedaços soltos', 'Armas sem pente: uma ida da mão por bala que falta, e o contador sobe junto', 'Recarga também em 3ª pessoa'], dados:null},
+  {id:'mapa', nome:'Mapa e ruas', url:'mundo.html?teste', resumo:'O mapa do bairro, sempre igual neste teste, já com você caminhando numa rua em modo apocalipse. Nada aqui é salvo. Demora um pouco para carregar.',
+    conferir:['Andar e correr nas ruas sem atravessar casas', 'Entrar numa casa e trocar a visão com V', 'Tamanho do entulho, dos sacos e dos latões ao lado do personagem', 'Árvores e mato novos'],
+    dados:() => ({semente:7, situacao:'abandonado', geracaoDo3D:'mundo.html > aba Arquivo > Pacote para jogo'})},
+  {id:'mapaNormal', nome:'Mapa antes do apocalipse', url:'mundo.html?teste=normal', resumo:'O mesmo mapa com o bairro ainda de pé.', conferir:['Latões nas calçadas, sem tampar portas ou portões', 'Passeio, fachadas e carros'], dados:() => ({semente:7, situacao:'normal'})},
+  {id:'personagem', nome:'Personagem', url:'index.html', resumo:'Criador: corpo, rosto, roupas, equipamentos e armas na mão.', conferir:['Trocar conjunto e equipamentos', 'Armas e modificações'], dados:null},
+  {id:'zumbis', nome:'Zumbis', url:'zumbis.html', resumo:'Zumbis prontos e sorteio.', conferir:['Sortear vários', 'Poses'], dados:null},
+  {id:'movimento', nome:'Andar e virar', url:'animacoes.html?modo=pista', resumo:'Pista com troca de direção.', antes:'Você aprovou na conversa em 28/11 ("Ficou fluido").',
+    conferir:['Meia-volta sem tranco', 'Começar e parar', 'Controle por WASD'], dados:() => ({locomocao:Locomocao.AJUSTES})},
+  {id:'parkour', nome:'Pular e agarrar', url:'animacoes.html?modo=obstaculos&obstaculo=todos', resumo:'Percurso de obstáculos. Para controlar, escolha "Eu controlo" na lista.', antes:'Você aprovou na conversa em 28/11 ("Ficaram boas").',
+    conferir:['Cada altura tem a reação certa', 'Agarrar no ar', 'Passagem baixa e caco de vidro'], dados:() => ({parkour:Parkour.AJUSTES})},
+  {id:'rapel', nome:'Corda e rapel', url:'animacoes.html?modo=obstaculos&obstaculo=corda_muro', resumo:'Corda militar. Os outros testes de corda estão na lista de obstáculos.', antes:'O rapel de lado você aprovou; a corda de pano e a metragem ainda não tiveram aprovação separada.',
+    conferir:['Subir e descer', 'Corda de pano (uma vez só)', 'Pouco pano: fica pendurado', 'Armas guardadas durante a corda'], dados:() => ({rapel:Rapel.AJUSTES})},
+  {id:'ferimento', nome:'Queda e ferimento', url:'animacoes.html?modo=obstaculos&obstaculo=queda_leve', resumo:'Queda que machuca, tratamento e volta ao normal.', antes:'Você aprovou na conversa em 28/11 ("Ficaram bons").',
+    conferir:['3,5 m só amortece', '4,8 m machuca a perna; 6 m fratura', 'Atadura, tala e kit'], dados:() => ({saude:Saude.AJUSTES, ferimentos:Saude.FERIMENTOS, remedios:Saude.REMEDIOS})},
+  {id:'fisica', nome:'Objetos com física', url:'fisica.html', resumo:'Quintal com sacos de lixo, latões, caixas e entulho solto. Novo: ainda não foi aprovado.',
+    conferir:['Andando empurra o latão; correndo derruba', 'O lixo se espalha uma vez', 'Sacos amassam e escorregam', 'Nada atravessa mureta nem some', 'O peso de cada coisa parece certo'], dados:() => ({fisica:Fisica.AJUSTES})},
+  {id:'tiro', nome:'Tiro em 1ª pessoa', url:'tiro.html', resumo:'Estande com armas, miras, recarga, som e efeitos.', antes:'Miras, som, braços e efeitos aprovados na conversa em 28/11.',
+    conferir:['Mirar com cada tipo de mira', 'Recarregar', 'Som (botão "Ligar o som")', 'Faísca, fumaça e sangue'], dados:() => ({armas:fichas(f => f.tipo === 'tiro')})},
+  {id:'combate', nome:'Combate com zumbis', url:'tiro.html?combate&camera=ombro', resumo:'Corpo a corpo em 3ª pessoa. A tecla V troca a câmera.', antes:'Combate e 3ª pessoa aprovados na conversa em 28/11.',
+    conferir:['Defender, empurrar, esquivar e pisar', 'Golpe forte (segurar)', 'Quebra de arma', 'Cansaço'], dados:() => ({combate:{jogador:Combate.J, zumbis:Combate.TIPOS, armasDePerto:Combate.ARMAS_PERTO}, golpes:fichas(f => !!f.golpes)})},
+  {id:'agarrao', nome:'Agarrão no chão', url:'tiro.html?combate&camera=lado&cenario=tres&estado=grave', resumo:'Estado grave contra três: é aqui que dá para ser derrubado.',
+    conferir:['Zumbi montado, sem flutuar', 'Clicar repetido para se soltar', 'Mordida e infecção', 'Movimento junto do zumbi (você pediu mais fluido: ainda não feito)'], dados:() => ({agarrao:{etapas:Combate.ETAPAS, condicoes:Combate.CONDICOES, valores:Combate.G}})},
+  {id:'cenarios', nome:'Cenários e veículos', url:'cenario.html', resumo:'Montador de cenários. A garagem abre pelo botão das ferramentas.', conferir:['Colocar e mover itens', 'Veículos'], dados:null},
+];
+const A_FAZER = ['Deitar e rastejar, conferindo se o lugar cabe', 'Nadar', 'Agarrão mais fluido, com animação própria de puxar o corpo', 'Carregar munição no pente, bala por bala',
+  'Construção procedural de casas', 'Mapa até o centro', 'IA dos NPCs: barra de percepção, último lugar visto, grupo, rádio e grito'];
+
+let guardado = {}; try { guardado = JSON.parse(localStorage.getItem(GUARDA)) || {}; } catch (e){}
+const guardar = () => { try { localStorage.setItem(GUARDA, JSON.stringify(guardado)); } catch (e){ $('situacao').textContent = 'Este navegador não deixou salvar as marcações.'; } };
+const de = id => guardado[id] || (guardado[id] = {estado:'', nota:'', itens:[]});
+/* marca dos números na hora da aprovação: se mudarem depois, a aprovação deixa de valer */
+function digital(texto){ let h = 2166136261; for (let i = 0; i < texto.length; i++) h = Math.imul(h ^ texto.charCodeAt(i), 16777619); return (h >>> 0).toString(16); }
+const numeros = s => s.dados ? JSON.stringify(s.dados()) : '';
+function estadoDe(s){ const g = guardado[s.id]; if (!g?.estado) return ''; return g.estado === 'aprovado' && s.dados && g.marca !== digital(numeros(s)) ? 'mudou' : g.estado; }
+
+let atual = ESTACOES[0];
+function listar(){
+  const botoes = ESTACOES.map(s => {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.id = s.id; b.className = s === atual ? 'ativo' : '';
+    const bola = document.createElement('span'); bola.className = 'bola ' + estadoDe(s); b.append(bola, s.nome);
+    b.addEventListener('click', () => abrir(s)); return b;
+  });
+  const falta = document.createElement('button'); falta.type = 'button'; falta.textContent = 'Ainda não existe (' + A_FAZER.length + ')'; falta.className = atual ? '' : 'ativo';
+  falta.addEventListener('click', () => abrir(null));
+  $('estacoes').replaceChildren(...botoes, falta);
+  const n = e => ESTACOES.filter(s => estadoDe(s) === e).length;
+  $('placar').textContent = n('aprovado') + ' de ' + ESTACOES.length + ' aprovadas' + (n('ajustar') ? ' · ' + n('ajustar') + ' com ajuste' : '') + (n('mudou') ? ' · ' + n('mudou') + ' para conferir de novo' : '');
+}
+function situacao(){
+  if (!atual) return;
+  const e = estadoDe(atual), g = de(atual.id);
+  $('situacao').textContent = e === 'aprovado' ? 'Aprovada por você em ' + g.quando + '.' : e === 'ajustar' ? 'Marcada para ajustar em ' + g.quando + '.' : e === 'mudou' ? 'Os números mudaram depois da aprovação de ' + g.quando + ': confira de novo.' : (atual.antes ? atual.antes + ' Aqui ainda não está marcada.' : 'Ainda não marcada.');
+}
+function abrir(s){
+  atual = s; $('meio').replaceChildren();
+  for (const id of ['aprovar', 'ajustar', 'limpar', 'recarregar', 'sozinha', 'nota']) $(id).hidden = !s;
+  if (!s){
+    const d = document.createElement('div'); d.className = 'semTela'; const t = document.createElement('p'); t.textContent = 'Pedidos que ainda não têm tela de teste. Cada um ganha a sua estação quando for feito.'; d.append(t, ...A_FAZER.map(x => { const p = document.createElement('p'); p.textContent = '• ' + x; return p; }));
+    $('meio').append(d); $('nome').textContent = 'Ainda não existe'; $('resumo').textContent = ''; $('conferir').replaceChildren(); $('situacao').textContent = ''; listar(); return;
+  }
+  const f = document.createElement('iframe'); f.src = s.url; f.title = s.nome; f.allow = 'autoplay; fullscreen'; $('meio').append(f);
+  $('nome').textContent = s.nome; $('resumo').textContent = s.resumo; $('sozinha').href = s.url; $('nota').value = de(s.id).nota;
+  $('conferir').replaceChildren(...s.conferir.map(texto => {
+    const l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = de(s.id).itens.includes(texto);
+    c.addEventListener('change', () => { const g = de(s.id); g.itens = g.itens.filter(i => i !== texto).concat(c.checked ? [texto] : []); guardar(); });
+    l.append(c, texto); return l;
+  }));
+  situacao(); listar();
+  try { history.replaceState(null, '', '#' + s.id); } catch (e){}
+}
+function marcar(estado){
+  if (!atual) return;
+  const g = de(atual.id); g.estado = estado; g.quando = new Date().toLocaleDateString('pt-BR'); g.marca = estado === 'aprovado' ? digital(numeros(atual)) : '';
+  guardar(); situacao(); listar();
+}
+$('aprovar').addEventListener('click', () => marcar('aprovado'));
+$('ajustar').addEventListener('click', () => { marcar('ajustar'); mostrarLista(true); $('nota').focus(); });
+$('limpar').addEventListener('click', () => marcar(''));
+$('recarregar').addEventListener('click', () => abrir(atual));
+$('nota').addEventListener('input', () => { if (atual){ de(atual.id).nota = $('nota').value.slice(0, 2000); guardar(); } });
+function mostrarLista(sim){ $('detalhes').hidden = !sim; $('verlista').setAttribute('aria-expanded', String(sim)); $('verlista').textContent = 'O que conferir ' + (sim ? '▾' : '▸'); }
+$('verlista').addEventListener('click', () => mostrarLista($('detalhes').hidden));
+
+/* o pacote para o Unity: só entra o que está aprovado e com os mesmos números da aprovação */
+function pacote(){
+  const aprovadas = ESTACOES.filter(s => estadoDe(s) === 'aprovado');
+  return {formato:'wo-aprovados', versao:1, geradoEm:new Date().toISOString(),
+    aviso:'Só números de referência das mecânicas aprovadas. Animações e regras precisam ser refeitas em C#. Unidades: metros, segundos, quilos.',
+    aprovadas:aprovadas.map(s => ({id:s.id, nome:s.nome, aprovadaEm:guardado[s.id].quando, nota:guardado[s.id].nota || undefined, marca:guardado[s.id].marca || undefined, dados:s.dados ? s.dados() : null})),
+    foraDoPacote:ESTACOES.filter(s => estadoDe(s) !== 'aprovado').map(s => ({id:s.id, nome:s.nome, situacao:estadoDe(s) || 'não marcada', nota:guardado[s.id]?.nota || undefined})),
+    aindaNaoExiste:A_FAZER};
+}
+$('exportar').addEventListener('click', () => {
+  const p = pacote();
+  const lista = (titulo, itens) => { const h = document.createElement('p'); h.textContent = titulo; const u = document.createElement('ul'); u.append(...(itens.length ? itens : ['nenhuma']).map(t => { const li = document.createElement('li'); li.textContent = t; return li; })); return [h, u]; };
+  $('oquevai').replaceChildren(...lista('Vai no arquivo:', p.aprovadas.map(s => s.nome + (s.dados ? '' : ' (só o registro, sem números)'))), ...lista('Fica de fora:', p.foraDoPacote.map(s => s.nome + ' — ' + (s.situacao === 'mudou' ? 'mudou depois da aprovação' : s.situacao === 'ajustar' ? 'precisa ajustar' : 'não marcada'))));
+  $('baixar').disabled = !p.aprovadas.length; $('saida').showModal();
+});
+$('fechar').addEventListener('click', () => $('saida').close());
+$('baixar').addEventListener('click', () => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(pacote(), null, 2)], {type:'application/json'}));
+  a.download = 'wo-aprovados-unity-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); $('saida').close();
+});
+window.__teste = {ESTACOES, pacote, abrir};
+if (innerHeight < 900) mostrarLista(false);
+abrir(ESTACOES.find(s => '#' + s.id === location.hash) || ESTACOES[0]);
+</script>
+</body>
+</html>

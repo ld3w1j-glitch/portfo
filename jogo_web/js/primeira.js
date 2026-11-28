@@ -91,6 +91,9 @@ const Primeira = (() => {
     mao:{p:[-.25, -.215, .5], r:[-1.02, .12, .28]}, haste:{p:[-.2, -.25, .44], r:[1.36, .12, 0]},
     arco:{p:[.15, -.17, .66], r:[0, .06, .22]}, estilingue:{p:[.11, -.2, .55], r:[0, -.03, .14]}, soco:{p:[-.28, -.25, .58], r:[-.35, .15, .2]},
   };
+  /* puxando: a flecha (ou a pedra) fica um pouco abaixo e à direita do centro, paralela ao olhar.
+     Assim, na tela, ela aponta para a mira. O arco inclina com a ponta de cima para a direita, sem tapar o alvo */
+  const CORDA_ARMADA = {arco:{p:[-.07, -.17, .72], r:[0, 0, .27]}, estilingue:{p:[-.022, -.168, .6], r:[0, 0, .06]}};
   const BLOQUEIO = {mao:{p:[-.18, -.2, .46], r:[-.45, .95, 1.15]}, haste:{p:[-.27, -.28, .52], r:[1.55, .0, -1.25]}, soco:{p:[-.19, -.17, .58], r:[-1.0, .1, .1]}};
 
   /* golpes: [instante (0..1), deslocamento, giro]; dura = segundos; acerta = instante em que atinge.
@@ -124,14 +127,57 @@ const Primeira = (() => {
     const f = fichaComPecas(id, mods);
     return {id, mods, f, medida:medir(id, mods), classe:classe(id), municao:f.pente || 0, espera:0, mira:0, correr:0, anda:0, passo:0, tempo:0,
             sacar:0, olho:0, recarga:0, durRecarga:1, golpe:null, proximo:0, carga:0, segurando:false, bloqueio:0, puxada:0,
-            coice:{z:0, vz:0, x:0, vx:0, z2:0, vz2:0}, clarao:0, ciclo:0, travada:false, gira:[0, 0], balanco:[0, 0], camera:{x:0, y:0}, eventos:[]};
+            armado:0, coice:{z:0, vz:0, x:0, vx:0, z2:0, vz2:0}, clarao:0, ciclo:0, travada:false, gira:[0, 0], balanco:[0, 0], camera:{x:0, y:0}, eventos:[]};
   }
+  /* armas com pente que sai. As outras armas de fogo recebem os cartuchos um a um */
+  const COM_PENTE = new Set(['pistola', 'submetralhadora', 'fuzil_assalto', 'fuzil_madeira', 'rifle_precisao', 'metralhadora', 'gamb_pistola', 'gamb_submetralhadora', 'gamb_fuzil']);
+  /* por onde o pente passa: arma = encaixado; fora = logo abaixo do encaixe; ver = perto dos olhos; baixo = guardando e pegando outro */
+  const ROTEIRO_PENTE = {
+    vazio:{troca:.67, encaixou:.87, pontos:[[0, 'arma'], [.12, 'arma'], [.22, 'fora'], [.33, 'ver'], [.56, 'ver'], [.65, 'baixo'], [.7, 'baixo'], [.81, 'fora'], [.87, 'arma'], [1, 'arma']]},
+    cheio:{troca:.47, encaixou:.83, pontos:[[0, 'arma'], [.12, 'arma'], [.27, 'fora'], [.43, 'baixo'], [.52, 'baixo'], [.74, 'fora'], [.83, 'arma'], [1, 'arma']]},
+  };
+  const progresso = e => e.recarga > 0 && !e.destravando && e.f.tipo === 'tiro' && e.f.modo !== 'flecha' && e.f.modo !== 'besta' ? 1 - e.recarga / (e.durRecarga || 1) : null;
+  function passoDoPente(e){
+    const u = progresso(e); if (u === null || !COM_PENTE.has(e.id)) return null;
+    const R = e.penteVazio ? ROTEIRO_PENTE.vazio : ROTEIRO_PENTE.cheio, P = R.pontos;
+    let i = 0; while (i < P.length - 2 && u > P[i + 1][0]) i++;
+    const [u0, de] = P[i], [u1, ate] = P[i + 1];
+    return {u, de, ate, t:suave((u - u0) / (u1 - u0)), vazio:!!e.penteVazio, novo:u > R.troca,
+            /* a mão sai do apoio, e depois de encaixar dá um tapa no fundo e volta */
+            chega:suave(u / .11), tapa:Math.max(0, 1 - Math.abs(u - R.encaixou - .035) / .035), volta:suave((u - R.encaixou - .07) / (1 - R.encaixou - .07))};
+  }
+  /* cartuchos: uma ida da mão até a arma para cada bala que falta. k = quanto está perto da arma (0..1) */
+  const PREPARA = .26, FECHA = .16;                    /* segundos antes do primeiro e depois do último */
+  const ENTRA = .6;                                    /* em que ponto de cada ida o cartucho entra */
+  const idas = e => { const d = e.durRecarga || 1, de = PREPARA / d, ate = 1 - FECHA / d; return {de, ate, n:e.cartuchos || 1}; };
+  function passoDoCartucho(e){
+    const u = progresso(e); if (u === null || COM_PENTE.has(e.id)) return null;
+    const {de, ate, n} = idas(e); if (u < de || u >= ate) return null;
+    const v = (u - de) / (ate - de) * n, c = v - Math.floor(v);
+    return {u, vez:Math.floor(v), de:n, k:c < .55 ? suave(c / .55) : c < .74 ? 1 : 1 - suave((c - .74) / .26), naMao:c < ENTRA, empurra:c >= .55 && c < .74 ? Math.sin((c - .55) / .19 * Math.PI) : 0};
+  }
+  /* quantos cartuchos já entraram neste instante */
+  function jaEntraram(e){
+    const u = progresso(e); if (u === null) return 0;
+    const {de, ate, n} = idas(e), v = (u - de) / (ate - de) * n;
+    return Math.max(0, Math.min(n, Math.floor(v - ENTRA) + 1));
+  }
+
   const emUso = e => e.recarga > 0 || e.golpe || e.sacar < .85;
 
   function recarregar(e){
     if (e.f.tipo !== 'tiro' || e.recarga > 0 || e.golpe) return false;
     if (!e.travada && e.municao >= e.f.pente) return false;
-    e.durRecarga = e.travada ? 1.1 : e.f.recarga; e.recarga = e.durRecarga; e.destravando = e.travada; e.eventos.push({tipo:e.travada ? 'destravar' : 'recarregar'}); return true;
+    e.penteVazio = !e.travada && e.municao <= 0 && COM_PENTE.has(e.id);
+    /* com o pente vazio ele para um instante olhando para o pente */
+    e.durRecarga = e.travada ? 1.1 : e.f.recarga + (e.penteVazio ? .8 : 0);
+    /* sem pente: o tempo depende de quantas balas faltam */
+    e.cartuchos = 0;
+    if (!e.travada && !COM_PENTE.has(e.id) && e.f.modo !== 'flecha' && e.f.modo !== 'besta'){
+      const cada = Math.max(.45, Math.min(e.f.recarga - PREPARA - FECHA, e.f.recarga / e.f.pente));
+      e.cartuchos = e.f.pente - e.municao; e.antesDeCarregar = e.municao; e.durRecarga = PREPARA + FECHA + e.cartuchos * cada;
+    }
+    e.recarga = e.durRecarga; e.destravando = e.travada; e.eventos.push({tipo:e.travada ? 'destravar' : 'recarregar'}); return true;
   }
   function golpear(e, nome, forte){
     if (e.golpe || e.recarga > 0 || e.sacar < .85) return false;
@@ -160,6 +206,8 @@ const Primeira = (() => {
     e.eventos = []; e.tempo += dt;
     e.ritmoGolpe = f.ritmo || 1;
     e.sacar = Math.min(1, e.sacar + dt / .42);
+    /* arco e estilingue sobem até a mira ao puxar e descem sem tranco depois do disparo */
+    const armar = e.puxada > .02 ? 1 : 0; e.armado = puxa(e.armado, armar, armar ? 13 : 5, dt);
     e.espera = Math.max(0, e.espera - dt); e.clarao = Math.max(0, e.clarao - dt);
     const correndo = c.correr && c.andando > .5 && !c.mirar && !c.atirar && !e.golpe && e.recarga <= 0;
     e.correr = puxa(e.correr, correndo ? 1 : 0, 9, dt);
@@ -174,6 +222,11 @@ const Primeira = (() => {
     if (e.ciclo > 0){ const antes = e.ciclo; e.ciclo = Math.max(0, e.ciclo - dt); const meio = e.cicloTotal * .5; if (antes > meio && e.ciclo <= meio) e.eventos.push({tipo:'ciclo', capsula:true}); }
     if (e.recarga > 0){
       e.recarga -= dt;
+      /* cada cartucho conta na hora em que a mão o coloca */
+      if (e.cartuchos && !e.destravando && e.recarga > 0){
+        const agora = e.antesDeCarregar + jaEntraram(e);
+        if (agora > e.municao){ e.municao = agora; e.eventos.push({tipo:'cartucho', municao:agora}); }
+      }
       if (e.recarga <= 0){ e.recarga = 0; if (e.destravando) e.travada = false; else e.municao = f.pente; e.destravando = false; e.eventos.push({tipo:'pronta'}); }
     }
 
@@ -235,7 +288,7 @@ const Primeira = (() => {
     const m = suave(e.mira);
     if (m > .001){
       /* mirando: a linha de mira passa exatamente pelo centro da tela */
-      const alvo = cl === 'arco' ? {p:[.062, -.118, .7], r:[0, .025, .13]} : cl === 'estilingue' ? {p:[.052, -.176, .6], r:[0, -.01, .09]}
+      const alvo = CORDA_ARMADA[cl] ? CORDA_ARMADA[cl]
         /* primeiro a arma sobe à altura do olho, longe; depois vem até ele (a linha de mira não sai do centro) */
         : {p:[0, -e.medida.mira * k, cl === 'curta' ? lerp(.66, .5, suave(e.olho)) : lerp(.42, .275, suave(e.olho))], r:[0, 0, 0]};
       mistura(alvo, m);
@@ -260,7 +313,8 @@ const Primeira = (() => {
       const h = e.golpe, a = amostra(h.g, preso(h.t / (h.g.dura / e.ritmoGolpe), 0, 1));
       if (h.g.esquerda) outra = a; else soma(a.p, a.r);
     }
-    if (e.puxada > 0) soma([.03, .02, .02], [0, 0, 0], suave(e.puxada));
+    if (CORDA_ARMADA[cl]){ if (e.armado > .001) mistura(CORDA_ARMADA[cl], suave(e.armado) * (1 - m)); }
+    else if (e.puxada > 0) soma([.03, .02, .02], [0, 0, 0], suave(e.puxada));
     /* coice */
     soma([e.coice.z2 * .012, -e.coice.x * .012, e.coice.z * .55], [e.coice.x * .55, e.coice.z2 * .05, e.coice.z2 * .22]);
     /* puxar a telha ou o ferrolho */
@@ -279,7 +333,11 @@ const Primeira = (() => {
         soma(e.classe === 'curta' ? [.03, .03, -.06] : [.05, .01, -.03], alvo, deita);
         const vai = suave((u - .12) / .22) * (1 - suave((u - .52) / .22));
         mao = [mao[0] - 2 * vai, -17 * vai, 3 * vai];
-        const tapa = Math.max(0, 1 - Math.abs(u - .76) / .06);
+        /* a arma sobe um pouco, para o encaixe aparecer na tela */
+        if (progresso(e) !== null) soma(e.classe === 'curta' ? [.1, .07, .04] : [.12, .115, .07], [0, 0, e.classe === 'curta' ? .1 : .22], deita);
+        /* olhando o pente vazio: a arma sai da frente, para baixo e para a direita */
+        if (e.penteVazio) soma([-.18, -.16, 0], [.12, 0, 0], suave((u - .19) / .13) * (1 - suave((u - .56) / .16)));
+        const tapa = Math.max(0, 1 - Math.abs(u - (COM_PENTE.has(e.id) ? (e.penteVazio ? .905 : .865) : .9)) / .05);
         soma([0, .022, 0], [-.07, 0, 0], tapa);
       }
     }
@@ -289,5 +347,5 @@ const Primeira = (() => {
     return {p, q:giroDe(r), mao, outra:outra && {p:outra.p, q:giroDe(outra.r)}, lunetaCheia:e.f.mira?.startsWith('luneta') && e.mira > .86 && e.olho > .45};
   }
 
-  return {ficha, fichaComPecas, medir, criar, passo, posicao, recarregar, classe, giroDe, GOLPES, FOGO, QUADRIL, mul, eixo};
+  return {COM_PENTE, passoDoPente, passoDoCartucho, progresso, ficha, fichaComPecas, medir, criar, passo, posicao, recarregar, classe, giroDe, GOLPES, FOGO, QUADRIL, mul, eixo};
 })();

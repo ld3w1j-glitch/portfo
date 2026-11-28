@@ -31,6 +31,18 @@ const Povoar = (() => {
           }
         }
       },
+      /* blocos numa grade: cheio = Map "i,j,k" -> cor. Só sai a face que não tem vizinho */
+      grade(cheio, passo){
+        for (const [chave, cor] of cheio){
+          const [i, j, k] = chave.split(',').map(Number), base = hex(cor), min = [i * passo, j * passo, k * passo];
+          for (const [n, cantos] of FACES){
+            if (cheio.has((i + n[0]) + ',' + (j + n[1]) + ',' + (k + n[2]))) continue;
+            const r = sorteioN(i * 31 + n[0] * 7, j * 17 + n[1] * 5, k * 13 + n[2] * 3), f = r < .22 ? .92 : r > .8 ? 1.07 : 1;
+            const q = cantos.map(c => c.map((v_, e) => min[e] + v_ * passo));
+            for (const e of [0, 1, 2, 0, 2, 3]) v.push(q[e][0], q[e][1], q[e][2], n[0], n[1], n[2], Math.min(255, base[0] * f), Math.min(255, base[1] * f), Math.min(255, base[2] * f), 0);
+          }
+        }
+      },
     };
     desenhar(g);
     return v;
@@ -47,17 +59,157 @@ const Povoar = (() => {
   const PARTES = {perto:['casco', 'cima', 'teto', 'dentro'], fora:['casco', 'cima', 'teto'], casco:['casco'], cima:['cima'], teto:['teto'], dentro:['dentro'], longe:['longe']};
   /* nome do modelo: as casas levam a planta junto, como "casa_telha@Am" */
   const modeloDe = o => o.planta ? `${o.id}@${o.planta}` : o.variante ? `${o.id}@${o.variante}` : o.id;
+  /* ---------------------------------------------------------------- vegetação
+     As copas são montadas em blocos numa grade: só as faces que aparecem são desenhadas, então nada fica
+     uma face sobre a outra. v = a variante (0..2), para as árvores não saírem todas iguais. */
+  const CASCA = '#5E442F', CASCA2 = '#4C3626';
+  const numDaVariante = p => Number(p) || 0;
+  /* manchas = [[x, y, z, raioLado, raioAltura]]; cores = [de baixo, do meio, de cima] */
+  function copa(g, manchas, passo, cores, sem, falhas = .2){
+    const cheio = new Map();
+    let base = 1e9, topo = -1e9;
+    for (const [, y, , , ry] of manchas){ base = Math.min(base, y - ry); topo = Math.max(topo, y + ry); }
+    manchas.forEach(([x, y, z, r, ry], n) => {
+      for (let i = Math.floor((x - r) / passo) - 1; i <= Math.ceil((x + r) / passo); i++) for (let j = Math.floor((y - ry) / passo) - 1; j <= Math.ceil((y + ry) / passo); j++) for (let k = Math.floor((z - r) / passo) - 1; k <= Math.ceil((z + r) / passo); k++){
+        const cx = (i + .5) * passo - x, cy = (j + .5) * passo - y, cz = (k + .5) * passo - z, d = Math.hypot(cx / r, cy / ry, cz / r);
+        if (d > 1.04 + (sorteioN(i + sem, j, k) - .5) * .34) continue;
+        if (d > .74 && sorteioN(i, j + sem, k + n) < falhas) continue;          /* a beirada é falhada, como folhagem */
+        const chave = i + ',' + j + ',' + k; if (cheio.has(chave)) continue;
+        const alto = ((j + .5) * passo - base) / (topo - base) + (sorteioN(i, j, k + sem + 5) - .5) * .42;
+        cheio.set(chave, cores[alto < .34 ? 0 : alto < .68 ? 1 : 2]);
+      }
+    });
+    g.grade(cheio, passo);
+    return cheio;
+  }
+  /* galho em degraus, do tronco até o miolo de uma mancha */
+  function galho(g, de, ate, grosso, cor = CASCA){
+    const n = Math.max(2, Math.round(Math.hypot(ate[0] - de[0], ate[1] - de[1], ate[2] - de[2]) / (grosso * 1.1)));
+    for (let i = 1; i <= n; i++){ const t = i / n, w = grosso * (1 - t * .45) * (1 + (i % 2) * .03); g.b(de[0] + (ate[0] - de[0]) * t, de[1] + (ate[1] - de[1]) * t - w / 2, de[2] + (ate[2] - de[2]) * t, w, w * 1.12, w, cor, 0, 1 - (i % 3) * .05); }
+  }
+  /* raízes saindo do pé do tronco */
+  function raizes(g, tronco, cor){
+    const f = tronco / 2;
+    for (const [x, z, w, d] of [[f + .09, .04, .2, .14], [-f - .08, -.05, .18, .13], [.05, f + .1, .14, .22], [-.04, -f - .07, .13, .17]]){ g.b(x, -.4, z, w, .52, d, cor, 0, .92); g.b(x * 1.55, -.4, z * 1.55, w * .62, .44, d * .62, cor, 0, .85); }
+  }
+  function arvoreDeCopa(g, velha, planta){
+    const v = numDaVariante(planta), giro = v * 2.1, em = (a, r) => [Math.cos(a + giro) * r, Math.sin(a + giro) * r];
+    g.b(0, -1, 0, .46, 2.3, .46, CASCA, .3); g.b(.02, 1.3, -.01, .36, 1.4, .36, CASCA, .3);
+    for (let i = 0; i < 5; i++){ const [x, z] = em(i * 1.31, .235); g.b(x, .15 + i * .43, z, .07, .26, .07, CASCA2, 0); }       /* sulcos da casca */
+    raizes(g, .46, CASCA);
+    const alto = [3.9, 4.25, 3.65][v % 3], manchas = [[0, alto - .5, 0, 1.55, 1.05], [0, alto + .72, 0, 1.1, .85]];
+    for (let i = 0; i < 4; i++){ const [x, z] = em(i * 1.62 + .4, 1.15 + (i % 2) * .3), y = alto - .95 + ((i * 7 + v) % 4) * .24; manchas.push([x, y, z, .9 - (i % 3) * .08, .68]); galho(g, [0, 1.85 + i * .17, 0], [x * .78, y - .15, z * .78], .22); }
+    galho(g, [0, 2.4, 0], [.05, alto - .2, .05], .27);
+    copa(g, manchas, .38, ['#2F5B26', '#427A31', '#58953C'], 11 + v);
+  }
+  function mangueiraNova(g, velha, planta){
+    const v = numDaVariante(planta), giro = v * 2.4;
+    g.b(0, -1, 0, .66, 2.35, .66, '#4E3826', .3); raizes(g, .66, '#4E3826');
+    const manchas = [[0, 3.35, 0, 2.35, 1.35], [0, 4.65, 0, 1.55, 1.0]];
+    for (let i = 0; i < 5; i++){ const a = i * 1.2566 + giro, x = Math.cos(a) * 1.75, z = Math.sin(a) * 1.75, y = 2.75 + ((i + v) % 3) * .22; manchas.push([x, y, z, 1.05, .78]); if (i % 2 === 0 || i === 3) galho(g, [0, 1.2, 0], [x * .72, y - .35, z * .72], .3, '#4E3826'); }
+    galho(g, [0, 1.35, 0], [0, 3.1, 0], .42, '#4E3826');
+    const cheio = copa(g, manchas, .46, ['#234A1C', '#2F6224', '#3F7A2E'], 31 + v, .16);
+    /* as mangas penduradas por baixo da copa */
+    let n = 0;
+    for (const chave of cheio.keys()){
+      const [i, j, k] = chave.split(',').map(Number);
+      if (cheio.has(i + ',' + (j - 1) + ',' + k) || j * .46 > 3.0 || sorteioN(i, k, 77 + v) > .12 || n >= 16) continue;
+      const x = (i + .5) * .46, y = j * .46, z = (k + .5) * .46; n++;
+      g.b(x, y - .1, z, .028, .1, .028, '#3C5220', 0); g.b(x, y - .31, z, .17, .21, .15, n % 3 ? '#E0A324' : '#C4571E', 0, 1, true);
+    }
+  }
+  function ipe(g, cores, planta){
+    const v = numDaVariante(planta), giro = v * 1.9;
+    g.b(0, -1, 0, .36, 2.4, .36, '#6A5039', .3); g.b(.09, 1.4, .04, .28, 1.3, .28, '#6A5039', .3); g.b(-.02, 2.7, 0, .22, 1.2, .22, '#6A5039', .3); raizes(g, .36, '#6A5039');
+    const manchas = [[0, 4.75, 0, 1.15, .8]];
+    for (let i = 0; i < 5; i++){ const a = i * 1.2566 + giro, r = 1.05 + (i % 3) * .24, x = Math.cos(a) * r, z = Math.sin(a) * r, y = 3.15 + ((i * 3 + v) % 5) * .26; manchas.push([x, y, z, .74, .52]); galho(g, [0, 2.0 + i * .24, 0], [x * .86, y - .12, z * .86], .17, '#6A5039'); }
+    galho(g, [0, 3.6, 0], [0, 4.6, 0], .17, '#6A5039');
+    copa(g, manchas, .34, cores, 51 + v, .3);
+    /* pétalas no chão, cada uma no seu quadrado para nenhuma ficar sobre a outra */
+    for (let i = -6; i <= 6; i++) for (let k = -6; k <= 6; k++){
+      const d = Math.hypot(i, k); if (d > 6 || d < 1.6 || sorteioN(i, k, 63 + v) > .17) continue;
+      g.b(i * .27 + (sorteioN(i, k, 3) - .5) * .08, .004 + sorteioN(i, k, 4) * .008, k * .27 + (sorteioN(k, i, 5) - .5) * .08, .11, .012, .11, cores[(i + k + 12) % 3], 0);
+    }
+  }
+  function eucaliptoNovo(g, velha, planta){
+    const v = numDaVariante(planta);
+    /* o tronco liso, em faixas de casca soltando */
+    for (let i = 0; i < 11; i++) g.b(0, -1 + i * .84, 0, .34 - i * .012, .84, .34 - i * .012, ['#B3A58A', '#A09277', '#C2B69C'][(i + v) % 3], .45);
+    for (let i = 0; i < 5; i++) g.b((i % 2 ? .17 : -.17), 1.1 + i * 1.15, (i % 3 - 1) * .08, .03, .5, .09, '#8A765A', 0);
+    const manchas = [];
+    for (let i = 0; i < 7; i++){ const a = i * 2.5 + v * 1.7, r = i === 6 ? 0 : .55 + (i % 3) * .18, x = Math.cos(a) * r, z = Math.sin(a) * r, y = 5.0 + i * .86; manchas.push([x, y, z, .78 - Math.abs(i - 2) * .045, .62]); if (i < 6) galho(g, [0, y - .55, 0], [x * .8, y - .1, z * .8], .12, '#A09277'); }
+    copa(g, manchas, .34, ['#466442', '#567A4E', '#6C905C'], 71 + v, .34);
+  }
+  /* folha comprida em pedaços: sai do alto do talo, sobe um pouco e cai. (dx, dz) = para que lado */
+  function folhaDeBananeira(g, x, y, z, dx, dz, comp, tom){
+    const SOBE = [.09, .18, .22, .18, .07, -.12], LARG = [.18, .4, .5, .46, .34, .18];
+    let antes = 0;
+    for (let i = 0; i < 6; i++){
+      const d = .12 + i * comp, px = x + dx * d, pz = z + dz * d, w = LARG[i];
+      /* cada pedaço vai da altura do anterior até a dele, para a folha não ficar picada no ar */
+      const de = Math.min(antes, SOBE[i]), ate = Math.max(antes, SOBE[i]) + .05 + i * .0006;
+      g.b(px, y + de, pz, dx ? comp : w, ate - de, dz ? comp : w, i > 3 ? tom[1] : tom[0], .3, 1, true);
+      g.b(px, y + ate, pz, dx ? comp : .045, .016, dz ? comp : .045, '#9CC25A', 0);                     /* a nervura */
+      antes = SOBE[i];
+    }
+  }
+  function bananeiraNova(g, velha, planta){
+    const v = numDaVariante(planta);
+    [[0, 0, 2.35], [.62, .34, 1.55], [-.46, -.4, 1.05]].forEach(([x, z, h], n) => {
+      for (let i = 0; i < Math.ceil((h + .6) / .42); i++){ const y = -.6 + i * .42, w = .24 - n * .03 - i * .006; g.b(x, y, z, w, Math.min(.42, h - y), w, i % 2 ? '#78893A' : '#8A9A44', .25); }
+      const lados = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+      lados.forEach(([dx, dz], i) => { if (n === 2 && i === (v % 4)) return; folhaDeBananeira(g, x, h - .1 + ((i + v) % 4) * .09, z, dx, dz, .25 - n * .035, n % 2 ? ['#4F9433', '#3F7C29'] : ['#5CA33C', '#468A2E']); });
+      g.b(x, h - .02, z, .09, .5 - n * .08, .09, '#7FBF4E', 0);                                            /* a folha nova, enrolada */
+      /* folha seca caída junto do talo */
+      g.b(x + (n % 2 ? -.17 : .17), h - .85, z, .05, .6, .22, '#9A7A3A', 0);
+    });
+    for (let i = 0; i < 10; i++){ const a = i % 5, andar = (i / 5) | 0; g.b(-.2 - andar * .09, 1.62 - andar * .16 + (a % 2) * .01, -.16 + a * .08, .075, .17, .062, andar ? '#C9B93A' : '#8FA83A', 0, 1, true); }
+    g.b(-.2, 1.72, 0, .05, .24, .05, '#6E7A30', 0); g.b(-.31, 1.18, 0, .11, .2, .11, '#6A2E3E', 0, 1, true);       /* o cacho e o coração */
+  }
+  function arbustoNovo(g, velha, planta){
+    const v = numDaVariante(planta);
+    const cheio = copa(g, [[0, .34, 0, .55, .46], [.42, .22, .26, .34, .3], [-.36, .2, -.22, .36, .3], [-.12, .62, .1, .3, .26]], .19, ['#3C6A28', '#4F8434', '#66A044'], 91 + v, .22);
+    g.b(0, -.35, 0, .14, .5, .14, CASCA2, 0);
+    if (v % 3 === 0) return;
+    let n = 0;
+    for (const chave of cheio.keys()){
+      const [i, j, k] = chave.split(',').map(Number);
+      if (cheio.has(i + ',' + (j + 1) + ',' + k) || sorteioN(i, j, k + 13) > .16 || n >= 14) continue;
+      n++; g.b((i + .5) * .19, (j + 1) * .19, (k + .5) * .19, .075, .05, .075, v % 3 === 1 ? (n % 2 ? '#E8E2D0' : '#F2D54A') : (n % 2 ? '#C94F6A' : '#E07A8E'), 0);
+    }
+  }
+  /* mato alto: lâminas de dois pedaços, a ponta caída para um lado */
+  function capimNovo(g, velha, planta){
+    const v = numDaVariante(planta);
+    for (let i = 0; i < 15; i++){
+      const a = i * 2.399 + v, r = .05 + Math.sqrt(i / 15) * .42, x = Math.cos(a) * r, z = Math.sin(a) * r, h = .26 + sorteioN(i, 4, v) * .52, cor = ['#6F8A34', '#86993F', '#A3A552', '#7E9440'][(i + v) % 4];
+      g.b(x, -.15, z, .05, .15 + h * .7, .05, cor, 0, .9);
+      g.b(x + Math.cos(a) * .045, h * .62, z + Math.sin(a) * .045, .038, h * .42, .038, cor, 0, 1.08);
+      if (i % 5 === 2) g.b(x + Math.cos(a) * .045, h * 1.04, z + Math.sin(a) * .045, .055, .11, .055, '#C9B066', 0);       /* o pendão */
+    }
+  }
+  function floresDoMato(g, velha, planta){
+    const v = numDaVariante(planta), COR = [['#F2D54A', '#E8A81E'], ['#EFEBDC', '#E3C94A'], ['#B96BC4', '#F2D54A']][v % 3];
+    for (let i = 0; i < 11; i++){
+      const a = i * 2.399, r = .06 + Math.sqrt(i / 11) * .4, x = Math.cos(a) * r, z = Math.sin(a) * r, h = .16 + sorteioN(i, 8, v) * .24;
+      g.b(x, -.1, z, .028, .1 + h, .028, '#5C7F33', 0);
+      g.b(x, h, z, .085, .035, .085, COR[0], 0); g.b(x, h + .035, z, .036, .024, .036, COR[1], 0);
+      if (i % 2) g.b(x + .04, h * .45, z, .08, .02, .045, '#6F9A3A', 0);
+    }
+    for (let i = 0; i < 7; i++){ const a = i * 2.1 + 1, r = .1 + (i % 4) * .09; g.b(Math.cos(a) * r, -.1, Math.sin(a) * r, .045, .24 + (i % 3) * .07, .045, '#7E9440', 0); }
+  }
+
   const PLANTAS = {
-    arvore:{nome:'Árvore de copa', r:.35, copa:2.6, desenhar(g){ g.b(0, -1, 0, .45, 3.4, .45, '#5E442F', .3); for (const [x, y, z, w, h] of [[0, 2.2, 0, 3.6, 1.5], [0, 3.5, .2, 2.7, 1.1], [.9, 1.9, .8, 1.9, 1], [-1.1, 2.4, -.6, 2, 1.1], [0, 4.4, -.1, 1.5, .8]]){ g.b(x, y, z, w, h, w * .72, '#3F6F30', .45); g.b(x, y + .02, z, w * .72, h - .04, w, '#4B7F38', .45); } }, longe(g){ g.b(0, -1, 0, .4, 3.2, .4, '#5E442F', 0); g.b(0, 2.1, 0, 3.3, 2.4, 3.3, '#447432', 0); }},
-    mangueira:{nome:'Mangueira', r:.45, copa:3.4, desenhar(g){ g.b(0, -1, 0, .65, 3, .65, '#4E3826', .3); for (const [y, w, h, c] of [[1.7, 4.8, 1.2, '#2E5A24'], [2.8, 5.6, 1.4, '#366827'], [4.1, 4.4, 1.2, '#417430'], [5.2, 2.6, .8, '#4C8038']]){ g.b(0, y, 0, w, h, w * .7, c, .5); g.b(0, y + .02, 0, w * .7, h - .04, w, c, .5); } for (let i = 0; i < 9; i++) g.b((sorteioN(i, 1) - .5) * 4.6, 2 + sorteioN(i, 2) * 2.6, (sorteioN(i, 3) - .5) * 4.6, .2, .26, .2, '#E0A324', 0); }, longe(g){ g.b(0, -1, 0, .6, 3, .6, '#4E3826', 0); g.b(0, 1.9, 0, 5, 3.4, 5, '#366827', 0); }},
-    ipe_amarelo:{nome:'Ipê-amarelo', r:.3, copa:2.2, desenhar(g){ flor(g, '#F2C21A', '#E0A812', '#FBD84A'); }, longe(g){ g.b(0, -1, 0, .35, 4, .35, '#6A5039', 0); g.b(0, 2.8, 0, 3.2, 2, 3.2, '#EDBA16', 0); }},
-    ipe_roxo:{nome:'Ipê-roxo', r:.3, copa:2.2, desenhar(g){ flor(g, '#B2549B', '#963F84', '#CE74B6'); }, longe(g){ g.b(0, -1, 0, .35, 4, .35, '#6A5039', 0); g.b(0, 2.8, 0, 3.2, 2, 3.2, '#A84C93', 0); }},
-    eucalipto:{nome:'Eucalipto', r:.25, copa:1.3, desenhar(g){ g.b(0, -1, 0, .34, 8.4, .34, '#A8997F', .45); for (let i = 0; i < 6; i++){ const w = 2.3 - Math.abs(i - 2) * .32; g.b((i % 2 - .5) * .35, 4.6 + i * 1.02, ((i * 3) % 2 - .5) * .35, w, 1.12, w * .8, i % 2 ? '#52704A' : '#5E7E52', .45); } }, longe(g){ g.b(0, -1, 0, .3, 6, .3, '#A8997F', 0); g.b(0, 4.6, 0, 1.8, 5.6, 1.8, '#587849', 0); }},
-    bananeira:{nome:'Bananeira', r:.25, copa:1.2, desenhar(g){ for (const [x, z, h] of [[0, 0, 2.3], [.55, .3, 1.5], [-.4, -.35, 1.1]]){ g.b(x, -.6, z, .22, h + .6, .22, '#7A8C3A', .25); for (const [dx, dz, w, d] of [[.7, 0, 1.4, .42], [-.7, .05, 1.4, .42], [0, .7, .42, 1.4], [.05, -.7, .42, 1.4]]){ g.b(x + dx * .75, h - .12, z + dz * .75, w, .1, d, '#4F9433', .3); g.b(x + dx * 1.45, h - .42, z + dz * 1.45, Math.min(w, .42), .3, Math.min(d, .42), '#43802B', 0); } g.b(x, h - .05, z, .45, .5, .45, '#5CA33C', 0); } }, longe(g){ g.b(0, -.6, 0, .25, 2.6, .25, '#7A8C3A', 0); g.b(0, 1.7, 0, 2.2, .6, 2.2, '#4A8C30', 0); }},
-    arbusto:{nome:'Arbusto', r:0, copa:.8, desenhar(g){ g.b(0, -.3, 0, 1.3, 1, .9, '#4A7A30', .3); g.b(0, -.28, 0, .9, 1.2, 1.3, '#568A38', .3); g.b(.35, .3, .25, .6, .7, .6, '#63963F', .25); }, longe(g){ g.b(0, -.3, 0, 1.2, 1.1, 1.2, '#518434', 0); }},
-    capim:{nome:'Mato alto', r:0, copa:.5, miudo:true, desenhar(g){ for (let i = 0; i < 11; i++){ const a = i * 2.4, r = .08 + (i % 5) * .11; g.b(Math.cos(a) * r, -.15, Math.sin(a) * r, .09, .42 + sorteioN(i, 4) * .62, .09, i % 3 ? '#7E9440' : '#A0A456', 0); } }, longe:null},
+    arvore:{nome:'Árvore de copa', r:.35, copa:2.6, desenhar:arvoreDeCopa, longe(g){ g.b(0, -1, 0, .4, 3.2, .4, '#5E442F', 0); g.b(0, 2.2, 0, 3.4, 2.1, 3.4, '#427A31', 0); g.b(0, 4.3, 0, 2, .9, 2, '#58953C', 0); }},
+    mangueira:{nome:'Mangueira', r:.45, copa:3.4, desenhar:mangueiraNova, longe(g){ g.b(0, -1, 0, .6, 3, .6, '#4E3826', 0); g.b(0, 2, 0, 5.4, 2.6, 5.4, '#2F6224', 0); g.b(0, 4.6, 0, 3, 1.1, 3, '#3F7A2E', 0); }},
+    ipe_amarelo:{nome:'Ipê-amarelo', r:.3, copa:2.2, desenhar(g, velha, v){ ipe(g, ['#D99B0E', '#F2C21A', '#FBD84A'], v); }, longe(g){ g.b(0, -1, 0, .35, 4, .35, '#6A5039', 0); g.b(0, 2.8, 0, 3.2, 2, 3.2, '#EDBA16', 0); }},
+    ipe_roxo:{nome:'Ipê-roxo', r:.3, copa:2.2, desenhar(g, velha, v){ ipe(g, ['#8A3578', '#B2549B', '#CE74B6'], v); }, longe(g){ g.b(0, -1, 0, .35, 4, .35, '#6A5039', 0); g.b(0, 2.8, 0, 3.2, 2, 3.2, '#A84C93', 0); }},
+    eucalipto:{nome:'Eucalipto', r:.25, copa:1.3, desenhar:eucaliptoNovo, longe(g){ g.b(0, -1, 0, .3, 6, .3, '#A8997F', 0); g.b(0, 4.6, 0, 1.8, 5.6, 1.8, '#587849', 0); }},
+    bananeira:{nome:'Bananeira', r:.25, copa:1.2, desenhar:bananeiraNova, longe(g){ g.b(0, -.6, 0, .25, 2.6, .25, '#7A8C3A', 0); g.b(0, 1.9, 0, 2.6, .35, .5, '#4F9433', 0); g.b(0, 2.0, 0, .5, .34, 2.6, '#5CA33C', 0); }},
+    arbusto:{nome:'Arbusto', r:0, copa:.8, desenhar:arbustoNovo, longe(g){ g.b(0, -.3, 0, 1.2, 1.1, 1.2, '#518434', 0); }},
+    capim:{nome:'Mato alto', r:0, copa:.5, miudo:true, desenhar:capimNovo, longe:null},
+    flores:{nome:'Flores do mato', r:0, copa:.5, miudo:true, desenhar:floresDoMato, longe:null},
   };
-  function flor(g, a, b, c){ g.b(0, -1, 0, .34, 4.3, .34, '#6A5039', .3); g.b(.5, 2.5, .2, 1.2, .2, .2, '#6A5039', 0); g.b(-.5, 2.9, -.2, 1.1, .18, .18, '#6A5039', 0); for (const [x, y, z, w, h] of [[0, 3.2, 0, 2.9, 1.2], [1, 2.8, .5, 1.5, .8], [-1.05, 3.1, -.45, 1.6, .85], [0, 4.25, .1, 1.9, .85], [.1, 5, 0, 1, .5]]){ g.b(x, y, z, w, h, w * .72, a, .3); g.b(x, y + .02, z, w * .7, h - .04, w, b, .3); } for (let i = 0; i < 16; i++) g.b((sorteioN(i, 31) - .5) * 3.4, 2.6 + sorteioN(i, 32) * 2.6, (sorteioN(i, 33) - .5) * 3.2, .26, .22, .26, c, 0); }
   /* muro na beira do passeio. 0: telhadinho de cerâmica e portão branco; 1: portão de chapa cinza;
      2: balaústres em cima e portão branco; 3: portão amarelo e vazados. A passagem fica no mesmo lugar em todos. */
   function muroDeFrente(g, v, n){
@@ -108,7 +260,29 @@ const Povoar = (() => {
     }, longe(g){ g.b(0, -1, 0, 2.4, 3.6, .22, 'pintura', 0); }},
     poste:{nome:'Poste de luz', w:.35, d:.35, h:8, r:.2, desenhar(g){ g.b(0, -1.5, 0, .3, 9.4, .3, '#A9A79F', .6); g.b(0, 7.5, 0, 1.5, .1, .1, '#6E5844', 0); g.b(0, 6.95, 0, 1.1, .1, .1, '#6E5844', 0); for (const x of [-.62, .62, -.42, .42]) g.b(x, Math.abs(x) > .5 ? 7.6 : 7.05, 0, .1, .16, .1, '#33363B', 0); g.b(0, 6.2, .55, .08, .08, 1.1, '#4B5058', 0); g.b(0, 6.02, 1.12, .34, .18, .42, '#33363B', 0); g.b(0, 5.96, 1.12, .24, .08, .3, '#FFEFB0', 0); g.b(0, 4.6, .19, .5, .65, .12, '#7C8A8F', 0); }, longe(g){ g.b(0, -1, 0, .3, 8.9, .3, '#A9A79F', 0); g.b(0, 7.5, 0, 1.5, .12, .12, '#6E5844', 0); }},
     carro:{nome:'Carro enferrujado ou destruído', w:2.2, d:4.6, h:1.9, r:1.2, desenhar(g){ g.b(0, .34, 0, 1.76, .56, 3.9, 'pintura', .3); g.b(0, .9, -.3, 1.58, .62, 2, '#27343E', .5); for (const x of [-.78, .78]) for (const z of [-1.3, -.3, .7]) g.b(x, .9, z, .1, .62, .1, 'pintura', 0, .85); g.b(0, 1.5, -.3, 1.66, .13, 2.08, 'pintura', .4, .92); for (const x of [-.86, .86]) for (const z of [-1.3, 1.28]) g.b(x, -.05, z, .24, .68, .66, '#1B1B1E', .22); g.b(0, .34, 1.99, 1.78, .22, .14, '#2E3036', 0); g.b(0, .34, -1.99, 1.78, .22, .14, '#2E3036', 0); for (const x of [-.62, .62]){ g.b(x, .66, 1.97, .3, .16, .05, '#D9D2B4', 0); g.b(x, .66, -1.97, .28, .16, .05, '#8E2A22', 0); } for (let i = 0; i < 9; i++) g.b((sorteioN(i, 41) - .5) * 1.5, .9 + (i % 2) * .005, 1.35 + (sorteioN(i, 42) - .5) * 1.1, .3, .015, .26, FERRUGEM, 0); for (let i = 0; i < 6; i++) g.b(i % 2 ? .89 : -.89, .42 + sorteioN(i, 43) * .3, (sorteioN(i, 44) - .5) * 3.2, .015, .22, .4, FERRUGEM, 0); }, longe(g){ g.b(0, .1, 0, 1.76, .8, 3.9, 'pintura', 0); g.b(0, .9, -.3, 1.6, .7, 2, '#27343E', 0); }},
-    entulho:{nome:'Entulho', w:1.6, d:1.4, h:.7, r:0, miudo:true, desenhar(g){ for (let i = 0; i < 16; i++){ const s = .16 + sorteioN(i, 51) * .4; g.b((sorteioN(i, 52) - .5) * 1.6, -.1 + (i > 11 ? .22 : 0), (sorteioN(i, 53) - .5) * 1.3, s, s * .7, s * .85, [TIJOLO, REBOCO, TABUA, '#4B5058'][i % 4], .2); } }, longe:null},
+    /* espalhado e baixo: muitos pedaços pequenos, poucos médios, quase nenhum grande (antes todos ficavam grandes demais) */
+    entulho:{nome:'Entulho', w:1.7, d:1.5, h:.42, r:0, miudo:true, desenhar(g){
+      for (let i = 0; i < 26; i++){ const grande = i < 3, s = grande ? .22 + sorteioN(i, 51) * .14 : .05 + sorteioN(i, 51) * .13;
+        g.b((sorteioN(i, 52) - .5) * 1.65, -.025 + (i > 20 ? .07 : 0), (sorteioN(i, 53) - .5) * 1.4, s * (1 + sorteioN(i, 58) * .3), s * .55, s * (.7 + sorteioN(i, 59) * .5), [TIJOLO, REBOCO, TABUA, '#4B5058', '#8A8578'][i % 5], .2); }
+      for (let i = 0; i < 4; i++) g.b((sorteioN(i, 54) - .5) * 1.5, -.02, (sorteioN(i, 55) - .5) * 1.3, .018, .22 + sorteioN(i, 56) * .3, .018, '#6B6E63', 0);
+    }, longe(g){ g.b(0, -.1, 0, 1.5, .22, 1.3, '#6B6256', 0); }},
+    /* saco cheio: mais largo no meio, boca amarrada em cima; duas ou três jogadas juntas */
+    saco_lixo:{nome:'Saco de lixo', w:.7, d:.6, h:.62, r:0, miudo:true, desenhar(g){
+      const cores = ['#1D1E1C', '#2B3A26', '#C9C6B8']; let n = 0;
+      for (const [ox, oz, cor] of [[0, 0, 0], [.32, -.12, 1], [-.28, .16, 2]]){
+        if (cor === 2 && sorteioN(cor, 61) < .5) continue; n++;
+        const h0 = -.105 + sorteioN(n, 62) * .03;
+        g.b(ox, h0 + .07, oz, .34, .14, .3, cores[cor], .12); g.b(ox, h0 + .2, oz, .42, .16, .36, cores[cor], .12); g.b(ox, h0 + .35, oz, .36, .14, .32, cores[cor], .12);
+        g.b(ox, h0 + .46, oz, .14, .1, .13, cores[cor], .12); g.b(ox + .04, h0 + .53, oz - .02, .05, .07, .05, '#C8B468', 0);
+      }
+    }, longe(g){ g.b(0, -.05, 0, .6, .5, .5, '#242420', 0); }},
+    /* lata de lixo: corpo em degraus (quadrado, nunca redondo), aro e tampa */
+    latao_lixo:{nome:'Latão de lixo', w:.62, d:.62, h:.95, r:.3, desenhar(g, v){
+      const cor = v ? FERRUGEM : '#4B7A4E', n = v ? '#6B6256' : '#395C3B';
+      for (const [y, m] of [[-.04, .82], [.24, .9], [.54, 1]]) g.b(0, y, 0, .5 * m, .3, .5 * m, cor, .25);
+      g.b(0, .72, 0, .54, .08, .54, n, .3); g.b(0, .81, 0, .3, .1, .3, n, .3, 2);
+      for (let i = 0; i < 5; i++) g.b((sorteioN(i, 63) - .5) * .4, .29 + sorteioN(i, 64) * .5, (sorteioN(i, 65) - .5) * .4, .09, .09, .09, i % 2 ? '#1D1E1C' : '#C9C6B8', .1);
+    }, longe(g){ g.b(0, -.05, 0, .5, .93, .5, '#4B7A4E', 0); }},
     barricada:{nome:'Barricada', w:2.6, d:.8, h:1.1, r:1, desenhar(g){ for (let l = 0; l < 3; l++) for (let i = 0; i < 4; i++){ if (l % 2 && i === 3) continue; g.b(-1 + i * .66 + (l % 2) * .33, l * .27 - .08, (i % 2) * .04, .64, .3, .5, (i + l) % 3 ? '#B79F74' : '#9C855E', .2); } g.b(.2, .75, .05, 2.3, .13, .1, TABUA, .2); for (const x of [-1.25, 1.3]) g.b(x, -.2, .35, .5, 1.15, .5, FERRUGEM, .2); }, longe(g){ g.b(0, -.2, 0, 2.6, 1, .6, '#A89066', 0); }},
   };
   const TODOS = {...CASAS, ...PLANTAS, ...RUA};
@@ -284,7 +458,7 @@ const Povoar = (() => {
           }
         }
       }
-      /* ---- itens de rua: postes na calçada; abandonados: carros, entulho e barricadas */
+      /* ---- itens de rua: postes e latões na calçada; abandonados: carros, entulho, sacos de lixo e barricadas */
       if (cfg.rua > 0) for (const rua of m.ruas){
         const cam = caminho(rua.pts); if (cam.total < 20) continue;
         const urbana = URBANAS.has(rua.tipo);
@@ -293,11 +467,18 @@ const Povoar = (() => {
           if (!dentro(x, z) || molhado(x, z) || m.mat[celula(x, z)] === M.asfalto || noLugar(x, z, S + 11) > .35 + cfg.rua * .65) continue;
           if (junta({id:'poste', cat:'rua', x, z, y:Mundo.altura(x, z), rot:Math.atan2(p.dz, -p.dx), cor:0, velha:false, sx:1})) itens++;
         }
+        /* latão de lixo: numa rua comum ainda de pé; abandonado, metade some e o resto enferruja */
+        if (urbana) for (let d = 22; d < cam.total - 6; d += 37){
+          const p = cam.em(d), chance = velho ? .5 : .85; if (noLugar(p.x, p.z, S + 26) > chance) continue;
+          const off = rua.largura / 2 + (rua.calcada ? .5 : .15), x = p.x - p.dz * off, z = p.z + p.dx * off;
+          if (!dentro(x, z) || molhado(x, z) || m.mat[celula(x, z)] === M.asfalto) continue;
+          if (junta({id:'latao_lixo', cat:'rua', x, z, y:Mundo.altura(x, z) + (typeof Passeio === 'object' ? Math.max(0, Passeio.degrau(x, z)) : 0), rot:Math.atan2(p.dz, -p.dx) + (noLugar(x, z, S + 27) - .5) * .6, cor:0, velha:velho, sx:1})) itens++;
+        }
         if (velho && (urbana || rua.tipo === 'trunk')) for (let d = 14; d < cam.total - 8; d += 19){
           const p = cam.em(d), r = noLugar(p.x, p.z, S + 13); if (r > cfg.rua * .38) continue;
           const lado = noLugar(p.x, p.z, S + 14) < .5 ? -1 : 1, off = (rua.largura / 2 - 1.4) * lado, x = p.x - p.dz * off, z = p.z + p.dx * off;
           if (!dentro(x, z) || molhado(x, z)) continue;
-          const sorte = noLugar(x, z, S + 15), id = sorte < .62 ? 'carro' : sorte < .93 ? 'entulho' : 'barricada';
+          const sorte = noLugar(x, z, S + 15), id = sorte < .5 ? 'carro' : sorte < .76 ? 'entulho' : sorte < .91 ? 'saco_lixo' : 'barricada';
           const giro = Math.atan2(p.dx, p.dz) + (id === 'barricada' ? Math.PI / 2 : (noLugar(x, z, S + 16) - .5) * (sorte < .15 ? 2.6 : .5));
           const item = {id, cat:'rua', x, z, y:Mundo.altura(x, z) + .03, rot:giro, cor:Math.floor(noLugar(x, z, S + 17) * TINTAS.length), velha:false, sx:1};
           if (id === 'carro'){ item.variante = CarrosMundo.variante(noLugar(x, z, S + 18), noLugar(x, z, S + 19)); item.y -= .02; Object.assign(item, CarrosMundo.tamanho(item.variante)); }

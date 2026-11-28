@@ -356,7 +356,15 @@ $('roupa').addEventListener('change', () => { personagem(); atual = null; });
 document.querySelectorAll('[data-giro]').forEach(b => b.addEventListener('click', () => { visor.cam.giro = Number(b.dataset.giro); }));
 botoes();
 if (!visor) $('aviso').textContent = 'Este navegador não conseguiu abrir o desenho em 3D (WebGL).';
-else { personagem(); Object.assign(visor.cam, {giro:-.9, elev:.14, dist:4.6, alvo:.9}); trocarModo('obstaculos'); requestAnimationFrame(passo); }
+else {
+  personagem(); Object.assign(visor.cam, {giro:-.9, elev:.14, dist:4.6, alvo:.9});
+  /* a área de teste abre direto no que vai ser conferido: ?modo=...&obstaculo=... */
+  const pedido = new URLSearchParams(location.search);
+  trocarModo(MODOS[pedido.get('modo')] ? pedido.get('modo') : 'obstaculos');
+  const qual = pedido.get('obstaculo');
+  if (qual && [...$('obstaculo').options].some(o => o.value === qual)){ $('obstaculo').value = qual; $('obstaculo').dispatchEvent(new Event('change')); }
+  requestAnimationFrame(passo);
+}
 </script>
 </body>
 </html>

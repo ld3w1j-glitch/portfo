@@ -48,6 +48,30 @@ const Rapel = (() => {
   /* quantos metros faltam para os pés chegarem ao chão com folga (0 = chega) */
   const falta = (altura, metros) => Math.max(0, altura - metros - A.corpo);
 
+  /* ---------------------------------------------------------------- há espaço para a corda? */
+  const noPonto = (caixas, alvo, x, z, de, ate) => caixas.some(k => k !== alvo && k.y1 > de && k.y0 < ate && x > k.x0 - .03 && x < k.x1 + .03 && z > k.z0 - .03 && z < k.z1 + .03);
+  /* p = a parede escolhida; d = quanto de lado em relação ao ponto de partida. Devolve '' ou o que atrapalha */
+  function impedimento(caixas, p, d = 0){
+    const em = (s, w) => [p.origem[0] + p.fx * s - p.fz * (d + w), p.origem[1] + p.fz * s + p.fx * (d + w)];
+    /* em cima: onde ele vai ficar de pé (ou de onde vai sair) não pode haver teto nem outra peça */
+    for (const s of [.2, .45]) for (const w of [-.18, 0, .18]){ const [x, z] = em(s, w); if (noPonto(caixas, p.caixa, x, z, p.topo + .35, p.topo + 1.9)) return 'tem teto ou outra peça em cima: não dá para usar a corda aqui'; }
+    /* na frente da parede: por onde a corda e o corpo passam */
+    for (const s of [-.2, -.45, -.68]) for (const w of [-.2, 0, .2]){ const [x, z] = em(s, w); if (noPonto(caixas, p.caixa, x, z, p.base + .45, p.topo + 1.1)) return 'tem coisa no caminho da corda: tente em outro ponto'; }
+    return '';
+  }
+  function comEspaco(caixas, p){
+    if (!p) return p;
+    p.bloqueio = p.caixa.semCorda || impedimento(caixas, p);
+    if (!p.bloqueio){
+      /* de lado, só vai até onde continua havendo espaço */
+      for (const [chave, sentido] of [['dMin', -1], ['dMax', 1]]){
+        let d = 0; while (Math.abs(d) < 6 && !impedimento(caixas, p, d + sentido * .15)) d += sentido * .15;
+        p[chave] = d;
+      }
+    }
+    return p;
+  }
+
   /* ---------------------------------------------------------------- o que dá para fazer com a corda aqui */
   /* parede = {caixa, fx, fz (para dentro da parede), origem [x,z] no meio da face onde ele está, a0, a1, topo, base} */
   function procurar(e, caixas){
@@ -60,20 +84,21 @@ const Rapel = (() => {
         if (deFrente < .72 || dist > 1.15 || dist < -.1) continue;
         const lado = preso(ox ? e.z : e.x, a0 + .3, Math.max(a0 + .3, a1 - .3)), origem = ox ? [plano, lado] : [lado, plano];
         const base = Parkour.chaoEm(caixas, origem[0] + ox * .6, origem[1] + oz * .6, e.y - .62), altura = e.y - base;
-        if (altura >= A.quedaMinima) return {como:'descer', caixa:c, fx:-ox, fz:-oz, origem, a0, a1, fundo, topo:e.y, base, altura, dist};
+        if (altura >= A.quedaMinima) return comEspaco(caixas, {como:'descer', caixa:c, fx:-ox, fz:-oz, origem, a0, a1, fundo, topo:e.y, base, altura, dist});
       }
     }
     /* 2) embaixo de um muro que as mãos não alcançam: lançar o gancho e subir */
     const o = Parkour.olhar(caixas, e, 2.4);
     if (o && (o.tipo === 'alto' || (o.tipo === 'recusa' && o.altura > Parkour.AJUSTES.agarrar))){
       const lado = preso(o.nx ? e.z : e.x, o.a0 + .3, Math.max(o.a0 + .3, o.a1 - .3)), origem = o.nx ? [o.plano, lado] : [lado, o.plano];
-      return {como:'subir', caixa:o.caixa, fx:o.nx, fz:o.nz, origem, a0:o.a0, a1:o.a1, fundo:o.fundo, topo:o.caixa.y1, base:e.y, altura:o.altura, dist:o.dist, cortada:o.tipo === 'recusa'};
+      return comEspaco(caixas, {como:'subir', caixa:o.caixa, fx:o.nx, fz:o.nz, origem, a0:o.a0, a1:o.a1, fundo:o.fundo, topo:o.caixa.y1, base:e.y, altura:o.altura, dist:o.dist, cortada:o.tipo === 'recusa' && !o.caixa.semCorda});
     }
     return null;
   }
   function explicar(p, corda){
     if (!p) return null;
     const oque = p.como === 'subir' ? `muro de ${num(p.altura)} m` : `beirada de ${num(p.altura)} m`;
+    if (p.bloqueio) return {texto:`${oque}: ${p.bloqueio}`, pode:false};
     if (p.cortada) return {texto:`${oque}: o caco de vidro cortaria a corda`, pode:false};
     if (!corda) return {texto:`${oque}: sem corda ${p.como === 'subir' ? 'não dá para subir' : 'só pulando'}`, pode:false};
     const nome = corda.tipo === 'militar' ? `corda militar (${num(corda.metros)} m)` : `corda de pano (${num(corda.metros)} m)`;
@@ -128,7 +153,7 @@ const Rapel = (() => {
   function limites(r){
     const i = r.fx ? 1 : 0, sinal = r.fx ? r.fx : -r.fz, a = (r.a0 + .28 - r.origem[i]) / sinal, b = (r.a1 - .28 - r.origem[i]) / sinal;
     const abre = Math.max(.25, (r.topo - r.h) * Math.tan(A.abertura));
-    return [Math.max(Math.min(a, b), -abre), Math.min(Math.max(a, b), abre)];
+    return [Math.max(Math.min(a, b), -abre, r.dMin ?? -99), Math.min(Math.max(a, b), abre, r.dMax ?? 99)];
   }
   /* altura do quadril em que a corda acaba: de lado, ela alcança menos */
   const fimDaCorda = r => { const l = r.corda.metros - .25; return r.topo - Math.sqrt(Math.max(.04, l * l - r.d * r.d)); };
