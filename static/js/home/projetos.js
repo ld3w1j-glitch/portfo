@@ -15,7 +15,9 @@ function capaDoProjeto(p) {
 
 function cartaoDoProjeto(p, i) {
   const tag = p.link ? 'a' : 'div';
-  const href = p.link ? ` href="${esc(p.link)}" target="_blank" rel="noopener"` : '';
+  /* endereços do próprio site abrem na mesma aba; os de fora, em aba nova */
+  const fora = p.link && /^https?:/.test(p.link) ? ' target="_blank" rel="noopener"' : '';
+  const href = p.link ? ` href="${esc(p.link)}"${fora}` : '';
   return `<${tag}${href} class="card projeto cut ${p.destaque ? 'destaque' : ''}" data-cat="${p.cat}">
     <div class="capa ${p.cat}">${capaDoProjeto(p)}<span class="num">${doisDigitos(i + 1)}</span></div>
     <div class="info">

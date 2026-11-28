@@ -15,6 +15,7 @@ from pathlib import Path
 from flask import Flask, abort, jsonify, redirect, render_template, send_from_directory, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+import acervo
 import marca
 
 RAIZ = Path(__file__).resolve().parent
@@ -83,6 +84,10 @@ def registrar_rotas(app):
     def biblioteca():
         return send_from_directory(PAGINAS, PAGINAS_GERADAS["biblioteca-elementos"], max_age=300)
 
+    @app.get("/acervo")
+    def projetos_acervo():
+        return render_template("acervo/index.html", grupos=acervo.por_grupo(), creditos=acervo.CREDITOS_MAPA)
+
     @app.get("/manual")
     def manual():
         return render_template("manual/index.html")
@@ -106,7 +111,7 @@ def registrar_rotas(app):
 
     @app.get("/sitemap.xml")
     def sitemap():
-        urls = [url_for(n, _external=True) for n in ("home", "manual", "simulador", "guia", "gerador", "biblioteca")]
+        urls = [url_for(n, _external=True) for n in ("home", "projetos_acervo", "manual", "simulador", "guia", "gerador", "biblioteca")]
         itens = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
         xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{itens}</urlset>'
         return xml, 200, {"Content-Type": "application/xml; charset=utf-8"}

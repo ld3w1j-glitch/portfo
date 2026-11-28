@@ -41,7 +41,7 @@ projeto-wo/
 └─ tests/                 test_rotas.py · test_marca.py
 ```
 
-Rotas: `/` · `/manual` · `/marca/tokens.json` · `/marca/tokens.css` · `/simulador-reforma` · `/guia-logos` · `/gerador-pecas` · `/biblioteca-elementos` · `/healthz` · `/robots.txt` · `/sitemap.xml`.
+Rotas: `/` · `/acervo` · `/manual` · `/marca/tokens.json` · `/marca/tokens.css` · `/simulador-reforma` · `/guia-logos` · `/gerador-pecas` · `/biblioteca-elementos` · `/healthz` · `/robots.txt` · `/sitemap.xml`.
 Os endereços antigos (`/portfolio.html` etc.) redirecionam para os novos.
 
 ## Rodar no seu computador
@@ -65,7 +65,8 @@ Abra http://localhost:3000. Para recarregar templates sozinho: `$env:FLASK_DEBUG
 
 | Quero mudar | Arquivo |
 |---|---|
-| Projetos do portfólio | `static/js/home/dados/projetos.js` |
+| Cartões de projetos na página inicial | `static/js/home/dados/projetos.js` |
+| Página `/acervo` (tudo o que foi desenvolvido) | `acervo.py` · imagens e vídeos em `static/acervo/` |
 | Textos dos cards (serviços, sobre, DNA) | `static/js/home/dados/servicos.js` |
 | Capítulos e vídeos do filme | `static/js/home/dados/filme.js` |
 | Cores e fontes | `static/css/base/tokens.css` |
@@ -116,4 +117,4 @@ O endereço da imagem de prévia (Open Graph) é montado sozinho com o domínio 
 
 - Os módulos JS (`type="module"`) só funcionam servidos por HTTP, não abrindo o HTML direto do disco. Use sempre o Flask.
 - O site tem ~46 MB, quase tudo quadros de vídeo em `static/video`, que só carregam quando a seção está perto da tela.
-- Ainda são exemplos: os 6 projetos, o site de contato (ainda vazio, em `CONTATO` no `marca.py`), os números (00) e vários textos de cards.
+- Ainda são exemplos: o site de contato (ainda vazio, em `CONTATO` no `marca.py`), os números (00) e vários textos de cards.

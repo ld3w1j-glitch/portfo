@@ -4,12 +4,15 @@
    link: URL do case (opcional)
    destaque: true ocupa 2 colunas */
 export const PROJETOS = [
-  {titulo: 'Projeto exemplo 01', cat: 'design', ano: 2025, desc: 'Identidade visual completa: logotipo, paleta e aplicações.', destaque: true},
-  {titulo: 'Projeto exemplo 02', cat: 'codigo', ano: 2025, desc: 'Site institucional responsivo com painel simples.'},
-  {titulo: 'Projeto exemplo 03', cat: 'imagem', ano: 2024, desc: 'Série de ilustrações para campanha digital.'},
-  {titulo: 'Projeto exemplo 04', cat: 'codigo', ano: 2024, desc: 'Landing page de alta conversão.'},
-  {titulo: 'Projeto exemplo 05', cat: 'design', ano: 2024, desc: 'Sistema de selos, avatares e papelaria.'},
-  {titulo: 'Projeto exemplo 06', cat: 'imagem', ano: 2023, desc: 'Poster e capas para redes sociais.', destaque: true},
+  {titulo: 'Gerador de mundo', cat: 'codigo', ano: 2026, desc: 'Cenário em voxel de um jogo em desenvolvimento, com casas e territórios.', img: '/static/acervo/capas/mundo.webp', link: '/acervo#mundo', destaque: true},
+  {titulo: 'Identidade visual WO', cat: 'design', ano: 2026, desc: 'Logotipos, cores, tipografia e manual da marca.', img: '/static/acervo/capas/marca.webp', link: '/acervo#identidade'},
+  {titulo: 'Site portfólio', cat: 'codigo', ano: 2026, desc: 'Site em Python e Flask com animações e personagem 3D.', img: '/static/acervo/capas/site.webp', link: '/acervo#site'},
+  {titulo: 'Gerador de peças', cat: 'design', ano: 2026, desc: 'Ferramenta para montar peças com a biblioteca de elementos da marca.', img: '/static/acervo/capas/pecas.webp', link: '/acervo#pecas'},
+  {titulo: 'Simulador da reforma', cat: 'codigo', ano: 2026, desc: 'Estimativa educativa do efeito da CBS e do IBS.', img: '/static/acervo/capas/simulador.webp', link: '/acervo#simulador'},
+  {titulo: 'Reels em voxel', cat: 'imagem', ano: 2026, desc: 'Vídeos verticais com meu personagem, do roteiro ao som.', img: '/static/acervo/capas/reels.webp', link: '/acervo#reels', destaque: true},
+  {titulo: 'Personagem e cenários 3D', cat: 'imagem', ano: 2026, desc: 'Meu personagem e meu quarto de trabalho em blocos.', img: '/static/acervo/capas/voxel.webp', link: '/acervo#voxel'},
+  {titulo: 'Criadores do jogo', cat: 'codigo', ano: 2026, desc: 'Programas para criar personagens, cenários e zumbis.', img: '/static/acervo/capas/criadores.webp', link: '/acervo#criadores', destaque: true},
+  {titulo: 'Garagem de veículos', cat: 'imagem', ano: 2026, desc: 'Carros, motos e bicicletas em voxel.', img: '/static/acervo/capas/garagem.webp', link: '/acervo#garagem'},
 ];
 
 export const CATS = {todos: 'Todos', design: 'Design', codigo: 'Código', imagem: 'Imagem'};

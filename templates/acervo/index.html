@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block titulo %}Washington Oliveira · Acervo de projetos{% endblock %}
+{% block descricao %}Tudo o que já foi desenvolvido: marca, sites, vídeos, 3D e um jogo em construção.{% endblock %}
+{% set css_pagina = ['css/paginas/acervo.css'] %}
+
+{% block corpo %}
+<main class="acervo">
+  <div class="wrap">
+    <a class="rotulo ac-voltar" href="{{ url_for('home') }}#projetos">← Voltar ao portfólio</a>
+    <h1 class="display h-lg">Acervo de <span class="laranja">projetos</span></h1>
+    <p class="ac-intro">Tudo o que já foi desenvolvido, separado por área.</p>
+
+    <nav class="ac-indice" aria-label="Áreas">
+      {% for gid, nome, lista in grupos %}
+      <a class="tag" href="#area-{{ gid }}">{{ nome }} · {{ lista|length }}</a>
+      {% endfor %}
+    </nav>
+
+    {% for gid, nome, lista in grupos %}
+    <section class="ac-area" id="area-{{ gid }}" aria-labelledby="t-{{ gid }}">
+      <div class="sec-head"><h2 class="rotulo" id="t-{{ gid }}">{{ nome }}</h2></div>
+
+      {% for p in lista %}
+      <article class="ac-projeto" id="{{ p.id }}">
+        <header>
+          <span class="rotulo">{{ p.ano }}{% if p.situacao %} · <span class="laranja">{{ p.situacao }}</span>{% endif %}</span>
+          <h3 class="display h-md">{{ p.titulo }}</h3>
+          <p>{{ p.resumo }}</p>
+          <ul>{% for item in p.itens %}<li>{{ item }}</li>{% endfor %}</ul>
+          {% if p.links %}
+          <div class="ac-links">
+            {% for texto, rota in p.links %}<a class="btn cut-sm" href="{{ url_for(rota) }}">{{ texto }} →</a>{% endfor %}
+          </div>
+          {% endif %}
+        </header>
+
+        {% if p.videos %}
+        <div class="ac-videos">
+          {% for arquivo, legenda in p.videos %}
+          <figure>
+            <video controls playsinline preload="none" poster="{{ url_for('static', filename='acervo/' ~ arquivo ~ '.webp') }}"
+                   aria-label="{{ legenda }}">
+              <source src="{{ url_for('static', filename='acervo/' ~ arquivo ~ '.mp4') }}" type="video/mp4">
+            </video>
+            <figcaption>{{ legenda }}</figcaption>
+          </figure>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if p.fotos %}
+        <div class="ac-fotos {% if p.fotos|length == 1 %}uma{% endif %}">
+          {% for arquivo, legenda in p.fotos %}
+          <figure>
+            <a href="{{ url_for('static', filename='acervo/' ~ arquivo) }}" target="_blank" rel="noopener" title="Abrir a imagem inteira">
+              <img src="{{ url_for('static', filename='acervo/' ~ arquivo) }}" alt="{{ legenda }}" loading="lazy">
+            </a>
+            <figcaption>{{ legenda }}</figcaption>
+          </figure>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if p.id == 'mundo' %}<p class="ac-credito">{{ creditos }}</p>{% endif %}
+      </article>
+      {% endfor %}
+    </section>
+    {% endfor %}
+  </div>
+</main>
+
+{% include 'partials/_footer.html' %}
+{% endblock %}
